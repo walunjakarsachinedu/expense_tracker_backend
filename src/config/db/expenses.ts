@@ -1,13 +1,21 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
+const monthsEnum = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+
 const expensesSchema = new Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
-  date: {
-    type: Date,
+  month: {
+    type: String,
     required: true,
+    validate: {
+      validator: function (value: String) {
+        return monthsEnum.includes(value.toUpperCase())
+      },
+      message: props => `${props.value} is not a valid month.`,
+    }
   },
   personExpenses: [
     {

@@ -9,17 +9,21 @@ const queryResolvers = {
       return (args.name) ? `hello ${args.name}` : 'hi friend !!!';
     },
     user: async (parent, args, context, info) => {
-      const userId = context.user.sub;
-      let user: any = userId ? await User.findById(userId).lean() : null;
+      let user: any = await User.findById(context.userId).lean();
       if(!user) throw GraphqlErrors.USER_NOT_FOUND;
-
       delete user["password"];
       return user;
     },
     expenses: async (parent, args, context, info) => {
-      const userId = context.user.sub;
-      return userId ? await Expense.where('userId').equals(userId) : null;
-    } 
+      const expenses = await Expense.where('userId').equals(context.userId);
+      return expenses;
+    },
+    expenseOfMonth: async (parent, args, context, info) => {
+      const expense = await Expense
+        .where('userId').equals(context.userId)
+        .where('month').equals(args.month);
+      return expense && expense?.length > 0 ? expense[0] : null;
+    }
   },
   Mutation: {
     login: async (parent, {email, password}, context, info) => {

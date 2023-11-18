@@ -45,7 +45,7 @@ async function startServer(): Promise<void> {
     verifyToken,
     expressMiddleware(
       server, 
-      { context: async ({ req }) => ({user: (<any>req).auth }) }
+      { context: async ({ req }) => ({user: (<any>req).auth, userId: (<any>req).auth?.sub }) }
     ),
   );
 
