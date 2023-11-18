@@ -28,6 +28,7 @@ const expensesSchema = new Schema({
   },
   personExpenses: [
     {
+      _id: String,
       personName: {
         type: String,
         required: true,

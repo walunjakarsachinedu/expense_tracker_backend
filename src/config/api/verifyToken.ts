@@ -8,7 +8,7 @@ export default function verifyToken(req: Request, res: Response, next: NextFunct
     const decoded = jwt.verify(token, "**** my_secret_key ****");
     (<any>req).auth = decoded;
   } catch(error) {
-    console.error("invalid token. With following error: ", error);
+    console.error("---------> invalid token. \n---------> With following error: ", error);
   }
   next();
 } 

@@ -13,8 +13,8 @@ const typeDefs = `#graphql
     signup(name: String!, email: String!, password: String!): User
     addExpense(month: Month!, year: Int!): Expense @auth
     removeExpense(month: Month!, year: Int!): Expense @auth
-    # addPerson(expenseId: , personName: String!): PersonExpense @auth
-    # removePerson(personID: ID!): PersonExpense @auth
+    addPerson(expenseId: String!, personName: String!): Expense @auth
+    removePerson(expenseId: String!, personId: ID!): Expense @auth
     # addPersonExpense(personId: ID!, expenseTag: ExpenseTag!): Expense @auth
     # removePersonExpense(personId: ID!, expenseTagId: ID!): Expense @auth
     # updatePersonExpense(personId: ID!, expenseTagId: ID!, expenseTag: ExpenseTag): Expense @auth
@@ -36,7 +36,7 @@ const typeDefs = `#graphql
   }
 
   type PersonExpense {
-    _id: ID!
+    _id: ID
     personName: String
     personExpense: [ExpenseTag]
   }

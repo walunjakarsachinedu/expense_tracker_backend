@@ -2,6 +2,7 @@ import Expense from "../config/db/expenses.js";
 import User from "../config/db/users.js";
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import GraphqlErrors from "../config/api/errors.js";
+import mongoose from "mongoose";
 
 const queryResolvers = {
   Query: {
@@ -65,8 +66,28 @@ const queryResolvers = {
         'year': args.year,
       }).lean();
       return expense;
+    },
+    addPerson: async (parent, args, context, info) => {
+      const expense = await Expense.findById(args.expenseId);
+      if(!expense) throw GraphqlErrors.EXPENSE_NOT_FOUND;
+      expense.personExpenses.push(
+        {
+          _id: new mongoose.Types.ObjectId().toString(),
+          personName: args.personName,
+          personExpense: []
+        }
+      );
+      await expense.save();
+      return expense;
+    },
+    removePerson: async (parent, args, context, info) => {
+      const expense = await Expense.findById(args.expenseId); 
+      if(!expense) throw GraphqlErrors.EXPENSE_NOT_FOUND;
+      expense.personExpenses = expense.personExpenses.filter(person => person._id != args.personId);
+      await expense.save();
+      return expense; 
     }
-  }
+  },
 };
 
 
