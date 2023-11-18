@@ -7,6 +7,15 @@ const expensesSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
+  year: {
+    type: Number,
+    validate: {
+      validator: function (year) {
+        return year >= 2000 && year << 2100;
+      },
+      message: props => 'year should be between 2000 & 2100',
+    }
+  },
   month: {
     type: String,
     required: true,

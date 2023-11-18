@@ -25,7 +25,8 @@ let schema = makeExecutableSchema({
 schema = authDir.authDirectiveTransformerFunction(schema);
 
 interface MyContext {
-  token?: String;
+  user?: {[key: string]: any, 'sub': string};
+  userId?: String; 
 }
 
 const app = express();

@@ -5,14 +5,15 @@ const typeDefs = `#graphql
     hello(name: String): String 
     user: User @auth
     expenses: [Expense]  @auth
-    expenseOfMonth(month: Month!): Expense @auth
+    expenseOfMonth(month: Month!, year: Int!): Expense @auth
   }
 
   type Mutation {
     login(email: String!, password: String!): String
     signup(name: String!, email: String!, password: String!): User
-    # addExpense(userId: String!, month: Month!): Expense
-    # addPerson(personName: String!): PersonExpense @auth
+    addExpense(month: Month!, year: Int!): Expense @auth
+    removeExpense(month: Month!, year: Int!): Expense @auth
+    # addPerson(expenseId: , personName: String!): PersonExpense @auth
     # removePerson(personID: ID!): PersonExpense @auth
     # addPersonExpense(personId: ID!, expenseTag: ExpenseTag!): Expense @auth
     # removePersonExpense(personId: ID!, expenseTagId: ID!): Expense @auth
@@ -20,26 +21,28 @@ const typeDefs = `#graphql
   }
 
   type User {
-    id: ID!
+    _id: ID!
     name: String
     email: String
     password: String
   }
 
   type Expense {
+    _id: ID!
     userId: String!
     month: Month!
+    year: Int
     personExpenses: [PersonExpense]!
   }
 
   type PersonExpense {
-    id: ID!
+    _id: ID!
     personName: String
     personExpense: [ExpenseTag]
   }
 
   type ExpenseTag {
-    id: ID
+    _id: ID!
     money: Float
     tag: String
   }

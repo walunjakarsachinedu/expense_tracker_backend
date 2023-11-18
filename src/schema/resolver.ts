@@ -21,9 +21,10 @@ const queryResolvers = {
     expenseOfMonth: async (parent, args, context, info) => {
       const expense = await Expense
         .where('userId').equals(context.userId)
-        .where('month').equals(args.month);
+        .where('month').equals(args.month)
+        .where('year').equals(args.year);
       return expense && expense?.length > 0 ? expense[0] : null;
-    }
+    }  
   },
   Mutation: {
     login: async (parent, {email, password}, context, info) => {
@@ -40,11 +41,31 @@ const queryResolvers = {
       if(existingUser) throw GraphqlErrors.USER_ALREADY_EXISTS;
 
       const user = await User.create({name, email, password});
-      user.id = user._id;
-      delete user.password;
-      delete user.id;
+      delete user.password, delete user._id;
       return user;
     },
+    addExpense: async (parent, args, context, info) => {
+      const existingExpense = await Expense
+        .where('userId').equals(context.userId)
+        .where('month').equals(args.month)
+        .where('year').equals(args.year);
+      if(existingExpense && existingExpense.length > 0) throw GraphqlErrors.EXPENSE_ALREADY_EXIST;
+      const expense = await Expense.create({
+        userId: context.userId,
+        month: (<String>args.month).toUpperCase(),
+        year: args.year,
+        personExpenses: [],
+      }); 
+      return expense;
+    },
+    removeExpense: async (parent, args, context, info) => {
+      const expense = await Expense.findOneAndDelete({
+        'userId': context.userId,
+        'month': args.month,
+        'year': args.year,
+      }).lean();
+      return expense;
+    }
   }
 };
 
