@@ -7,6 +7,22 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import typeDefs from '../../schema/type.js';
 import queryResolvers from '../../schema/resolver.js';
+import { makeExecutableSchema } from '@graphql-tools/schema';
+import authDirective from '../../schema/auth-directive.js';
+import verifyToken from './verifyToken.js';
+
+
+// applying auth directive to schema
+let authDir = authDirective("auth");
+let schema = makeExecutableSchema({
+  typeDefs : [
+    typeDefs,
+    authDir.authDirectiveTypeDefs,
+  ],
+  resolvers: queryResolvers
+});
+
+schema = authDir.authDirectiveTransformerFunction(schema);
 
 interface MyContext {
   token?: String;
@@ -15,8 +31,7 @@ interface MyContext {
 const app = express();
 const httpServer = http.createServer(app);
 const server = new ApolloServer<MyContext>({
-  typeDefs,
-  resolvers: queryResolvers,
+  schema,
   plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
 });
 
@@ -27,9 +42,11 @@ async function startServer(): Promise<void> {
     '/graphql',
     cors<cors.CorsRequest>(),
     express.json(),
-    expressMiddleware(server, {
-      context: async ({ req }) => ({ token: req.headers.token }),
-    }),
+    verifyToken,
+    expressMiddleware(
+      server, 
+      { context: async ({ req }) => ({user: (<any>req).auth }) }
+    ),
   );
 
   await new Promise<void>((resolve) => httpServer.listen({ port: 4000 }, resolve));
