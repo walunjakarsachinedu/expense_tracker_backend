@@ -24,7 +24,6 @@ const typeDefs = `#graphql
     _id: ID!
     name: String
     email: String
-    password: String
   }
 
   type Expense {
