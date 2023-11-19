@@ -4,6 +4,7 @@ import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import GraphqlErrors from "../errors.js";
 import mongoose, { sanitizeFilter } from "mongoose";
 import bcrypt from "bcrypt";
+import config from "config";
 
 
 const queryResolvers = {
@@ -37,9 +38,9 @@ const queryResolvers = {
       if(!isPasswordValid) throw GraphqlErrors.INVALID_CREDENTIALS;
 
       const payload = { name: user.name, email: user.email };
-      const secret_key: Secret = "**** my_secret_key ****";
-      const config: SignOptions = { subject: user._id.toString(), expiresIn: "1d"};
-      return jwt.sign(payload, secret_key, config);
+      const jwtSecret: string = config.get("jwt_secret");
+      const jwtConfig: SignOptions = { subject: user._id.toString(), expiresIn: "1d"};
+      return jwt.sign(payload, jwtSecret, jwtConfig);
     },
     signup: async (parent, {name, email, password}, context, info) => {
       const saltRound = 10;
@@ -90,6 +91,8 @@ const queryResolvers = {
     removePerson: async (parent, args, context, info) => {
       const expense = await Expense.findById(args.expenseId); 
       if(!expense) throw GraphqlErrors.EXPENSE_NOT_FOUND;
+      const person = expense.personExpenses.find(person => person._id == args.personId);
+      if(!person) throw GraphqlErrors.PERSON_NOT_FOUND_IN_EXPENSE;
       expense.personExpenses = expense.personExpenses.filter(person => person._id != args.personId);
       await expense.save();
       return expense; 

@@ -14,6 +14,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/config": "^3.3.3",
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/mongoose": "^5.11.97",
     "@types/node": "^20.9.0",
     "nodemon": "^3.0.1",
@@ -27,6 +29,7 @@
     "@graphql-tools/utils": "^10.0.8",
     "@types/bcrypt": "^5.0.2",
     "bcrypt": "^5.1.1",
+    "config": "^3.3.9",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
