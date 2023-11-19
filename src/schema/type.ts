@@ -15,9 +15,9 @@ const typeDefs = `#graphql
     removeExpense(month: Month!, year: Int!): Expense @auth
     addPerson(expenseId: String!, personName: String!): Expense @auth
     removePerson(expenseId: String!, personId: ID!): Expense @auth
-    # addPersonExpense(personId: ID!, expenseTag: ExpenseTag!): Expense @auth
-    # removePersonExpense(personId: ID!, expenseTagId: ID!): Expense @auth
-    # updatePersonExpense(personId: ID!, expenseTagId: ID!, expenseTag: ExpenseTag): Expense @auth
+    addPersonExpense(expenseId: String!, personId: ID!, expenseTag: ExpenseTagInput!): Expense @auth
+    removePersonExpense(expenseId: String!, personId: ID!, expenseTagId: ID!): Expense @auth
+    updatePersonExpense(expenseId: String!, personId: ID!, expenseTagId: ID!, expenseTag: ExpenseTagInput!): Expense @auth
   }
 
   type User {
@@ -43,6 +43,11 @@ const typeDefs = `#graphql
 
   type ExpenseTag {
     _id: ID!
+    money: Float
+    tag: String
+  }
+
+  input ExpenseTagInput {
     money: Float
     tag: String
   }

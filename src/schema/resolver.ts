@@ -65,6 +65,7 @@ const queryResolvers = {
         'month': args.month,
         'year': args.year,
       }).lean();
+      if(!expense) throw GraphqlErrors.EXPENSE_NOT_FOUND;
       return expense;
     },
     addPerson: async (parent, args, context, info) => {
@@ -86,7 +87,46 @@ const queryResolvers = {
       expense.personExpenses = expense.personExpenses.filter(person => person._id != args.personId);
       await expense.save();
       return expense; 
-    }
+    },
+    addPersonExpense: async (parent, args, context, info) => {
+      const expense = await Expense.findById(args.expenseId); 
+      if(!expense) throw GraphqlErrors.EXPENSE_NOT_FOUND;
+      const person = expense.personExpenses.find(person => person._id == args.personId);
+      if(!person) throw GraphqlErrors.PERSON_NOT_FOUND_IN_EXPENSE;
+
+      person.personExpense.push({
+        _id: new mongoose.Types.ObjectId().toString(),
+        money: args.expenseTag.money,
+        tag: args.expenseTag.tag,
+      });
+      await expense.save();
+      return expense;
+    },
+    removePersonExpense: async (parent, args, context, info) => {
+      const expense = await Expense.findById(args.expenseId); 
+      if(!expense) throw GraphqlErrors.EXPENSE_NOT_FOUND;
+      const person = expense.personExpenses.find(person => person._id == args.personId);
+      if(!person) throw GraphqlErrors.PERSON_NOT_FOUND_IN_EXPENSE;
+      const expenseTag = person.personExpense.find(expenseTag => expenseTag._id == args.expenseTagId);
+      if(!expenseTag) throw GraphqlErrors.EXPENSE_TAG_NOT_FOUND_IN_PERSON_EXPENSE;
+
+      person.personExpense = person.personExpense.filter(expTag => expTag != expenseTag);
+      await expense.save();
+      return expense;
+    },
+    updatePersonExpense: async (parent, args, context, info) => {
+      const expense = await Expense.findById(args.expenseId); 
+      if(!expense) throw GraphqlErrors.EXPENSE_NOT_FOUND;
+      const person = expense.personExpenses.find(person => person._id == args.personId);
+      if(!person) throw GraphqlErrors.PERSON_NOT_FOUND_IN_EXPENSE;
+      const expenseTag = person.personExpense.find(expenseTag => expenseTag._id == args.expenseTagId);
+      if(!expenseTag) throw GraphqlErrors.EXPENSE_TAG_NOT_FOUND_IN_PERSON_EXPENSE;
+
+      if(args.expenseTag.money) expenseTag.money = args.expenseTag.money;
+      if(args.expenseTag.tag) expenseTag.tag = args.expenseTag.tag;
+      await expense.save();
+      return expense;
+    },
   },
 };
 

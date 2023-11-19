@@ -36,6 +36,7 @@ const expensesSchema = new Schema({
       personExpense: {
         type: [
           {
+            _id: String,
             money: Number,
             tag: String,
           },
