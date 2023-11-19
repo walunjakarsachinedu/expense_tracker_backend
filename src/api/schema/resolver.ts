@@ -1,7 +1,7 @@
-import Expense from "../config/db/expenses.js";
-import User from "../config/db/users.js";
+import Expense from "../../db/expenses.js";
+import User from "../../db/users.js";
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
-import GraphqlErrors from "../config/api/errors.js";
+import GraphqlErrors from "../errors.js";
 import mongoose, { sanitizeFilter } from "mongoose";
 import bcrypt from "bcrypt";
 

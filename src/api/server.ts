@@ -5,10 +5,10 @@ import express from 'express';
 import http from 'http';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import typeDefs from '../../schema/type.js';
-import queryResolvers from '../../schema/resolver.js';
+import typeDefs from './schema/type.js';
+import queryResolvers from './schema/resolver.js';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import authDirective from '../../schema/auth-directive.js';
+import authDirective from './schema/auth-directive.js';
 import verifyToken from './verifyToken.js';
 
 

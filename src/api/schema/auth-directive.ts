@@ -1,6 +1,6 @@
 import { MapperKind, createGraphQLError, getDirective, mapSchema } from "@graphql-tools/utils";
 import { GraphQLSchema, defaultTypeResolver } from "graphql";
-import GraphqlErrors from "../config/api/errors.js";
+import GraphqlErrors from "../errors.js";
 
 function authDirective(directiveName: string) {
   return {

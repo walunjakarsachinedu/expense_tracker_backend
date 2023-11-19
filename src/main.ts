@@ -1,5 +1,5 @@
-import { startServer } from "./config/api/server.js";
-import { connects } from "./config/db/connect.js";
+import { startServer } from "./api/server.js";
+import { connects } from "./db/connect.js";
 
 
 async function main() : Promise<void> {
