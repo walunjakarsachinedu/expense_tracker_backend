@@ -2,7 +2,9 @@ import Expense from "../config/db/expenses.js";
 import User from "../config/db/users.js";
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import GraphqlErrors from "../config/api/errors.js";
-import mongoose from "mongoose";
+import mongoose, { sanitizeFilter } from "mongoose";
+import bcrypt from "bcrypt";
+
 
 const queryResolvers = {
   Query: {
@@ -29,8 +31,10 @@ const queryResolvers = {
   },
   Mutation: {
     login: async (parent, {email, password}, context, info) => {
-      const user = await User.findOne({email, password});
+      const user = await User.findOne({email});
       if(!user) throw GraphqlErrors.INVALID_CREDENTIALS;
+      const isPasswordValid = bcrypt.compareSync(password, user.password);
+      if(!isPasswordValid) throw GraphqlErrors.INVALID_CREDENTIALS;
 
       const payload = { name: user.name, email: user.email };
       const secret_key: Secret = "**** my_secret_key ****";
@@ -38,7 +42,9 @@ const queryResolvers = {
       return jwt.sign(payload, secret_key, config);
     },
     signup: async (parent, {name, email, password}, context, info) => {
-      const existingUser = await User.findOne({email, password});
+      const saltRound = 10;
+      password = bcrypt.hashSync(password, saltRound);
+      const existingUser = await User.findOne({email});
       if(existingUser) throw GraphqlErrors.USER_ALREADY_EXISTS;
 
       const user = await User.create({name, email, password});

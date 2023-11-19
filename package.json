@@ -25,6 +25,8 @@
     "@apollo/server": "^4.9.5",
     "@graphql-tools/schema": "^10.0.0",
     "@graphql-tools/utils": "^10.0.8",
+    "@types/bcrypt": "^5.0.2",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
