@@ -37,7 +37,7 @@ const httpServer = http.createServer(app);
 const server = new ApolloServer<MyContext>({
   schema,
   plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
-  introspection: config.get(configPath.graphql.introspection)
+  // introspection: config.get(configPath.graphql.introspection)
 });
 
 
