@@ -1,5 +1,8 @@
 {
   "mongodb" : {
     "dbName": "expense-tracker-app-data"
+  },
+  "graphql": {
+    "introspection": true
   }
 }

@@ -5,6 +5,7 @@ import GraphqlErrors from "../errors.js";
 import mongoose, { sanitizeFilter } from "mongoose";
 import bcrypt from "bcrypt";
 import config from "config";
+import configPath from "../../config-path.js";
 
 
 const queryResolvers = {
@@ -38,7 +39,7 @@ const queryResolvers = {
       if(!isPasswordValid) throw GraphqlErrors.INVALID_CREDENTIALS;
 
       const payload = { name: user.name, email: user.email };
-      const jwtSecret: string = config.get("jwt_secret");
+      const jwtSecret: string = config.get(configPath.jwt_secret);
       const jwtConfig: SignOptions = { subject: user._id.toString(), expiresIn: "1d"};
       return jwt.sign(payload, jwtSecret, jwtConfig);
     },

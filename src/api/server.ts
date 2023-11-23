@@ -10,6 +10,9 @@ import queryResolvers from './schema/resolver.js';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import authDirective from './schema/auth-directive.js';
 import verifyToken from './verifyToken.js';
+import { Express } from 'express';
+import config from 'config';
+import configPath from '../config-path.js';
 
 
 // applying auth directive to schema
@@ -34,10 +37,12 @@ const httpServer = http.createServer(app);
 const server = new ApolloServer<MyContext>({
   schema,
   plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  introspection: config.get(configPath.graphql.introspection)
 });
 
 
-async function startServer(): Promise<void> {
+
+async function setupServer(): Promise<void> {
   await server.start();
   app.use(
     '/graphql',
@@ -46,15 +51,22 @@ async function startServer(): Promise<void> {
     verifyToken,
     expressMiddleware(
       server, 
-      { context: async ({ req }) => ({user: (<any>req).auth, userId: (<any>req).auth?.sub }) }
+      { 
+        context: async ({ req }) => ({
+          user: (<any>req).auth, 
+          userId: (<any>req).auth?.sub, 
+          tokenError: (<any>req).tokenError
+        }) 
+      }
     ),
   );
+}
 
-  await new Promise<void>((resolve) => httpServer.listen({ port: 4000 }, resolve));
-  console.log(`🚀 Server ready at http://localhost:4000/graphql`);
+async function getServer(): Promise<Express> {
+  await setupServer();
+  return app;
 }
 
 
-
-export {startServer};
+export default getServer;
 

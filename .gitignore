@@ -131,3 +131,5 @@ dist
 
 
 run.sh
+# Local Netlify folder
+.netlify

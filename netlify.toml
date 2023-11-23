@@ -1,0 +1,11 @@
+[functions]
+  external_node_modules = ["express"]
+  node_bundler = "esbuild"
+  directory = "src/functions"
+[[redirects]]
+  force = true
+  from = "/graphql/*"
+  status = 200
+  to = "/.netlify/functions/graphql/:splat"
+
+

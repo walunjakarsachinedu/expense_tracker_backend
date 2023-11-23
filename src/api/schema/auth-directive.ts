@@ -1,5 +1,5 @@
-import { MapperKind, createGraphQLError, getDirective, mapSchema } from "@graphql-tools/utils";
-import { GraphQLSchema, defaultTypeResolver } from "graphql";
+import { MapperKind, getDirective, mapSchema } from "@graphql-tools/utils";
+import { GraphQLSchema } from "graphql";
 import GraphqlErrors from "../errors.js";
 
 function authDirective(directiveName: string) {
@@ -14,6 +14,7 @@ function authDirective(directiveName: string) {
           if(!authDir) return fieldConfig;
           const resolver = fieldConfig.resolve;
           fieldConfig.resolve = (source, args, context, info) => {
+            if(context.tokenError) throw context.tokenError;
             if(!context.user) throw GraphqlErrors.UNAUTHENTICATED;
             return resolver(source, args, context, info);
           }
