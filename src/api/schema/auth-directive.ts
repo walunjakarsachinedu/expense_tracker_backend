@@ -1,6 +1,6 @@
 import { MapperKind, getDirective, mapSchema } from "@graphql-tools/utils";
 import { GraphQLSchema } from "graphql";
-import GraphqlErrors from "../errors.js";
+import {getError, ErrorCodes } from "../errors.js";
 
 function authDirective(directiveName: string) {
   return {
@@ -15,7 +15,7 @@ function authDirective(directiveName: string) {
           const resolver = fieldConfig.resolve;
           fieldConfig.resolve = (source, args, context, info) => {
             if(context.tokenError) throw context.tokenError;
-            if(!context.user) throw GraphqlErrors.UNAUTHENTICATED;
+            if(!context.user) throw getError(ErrorCodes.UNAUTHENTICATED);
             return resolver(source, args, context, info);
           }
           return fieldConfig;

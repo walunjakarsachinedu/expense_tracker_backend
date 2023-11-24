@@ -12,7 +12,7 @@ import authDirective from './schema/auth-directive.js';
 import verifyToken from './verifyToken.js';
 import { Express } from 'express';
 import config from 'config';
-import configPath from '../config-path.js';
+import {configPath, getConfig} from '../config-path.js';
 
 
 // applying auth directive to schema
@@ -37,13 +37,17 @@ const httpServer = http.createServer(app);
 const server = new ApolloServer<MyContext>({
   schema,
   plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
-  // introspection: config.get(configPath.graphql.introspection)
+  // introspection: getConfig(configPath.graphql.introspection)
 });
 
 
 
 async function setupServer(): Promise<void> {
   await server.start();
+  app.get('/hello', (req, res) => {
+    res.send('Hello, World!');
+  });
+  
   app.use(
     '/graphql',
     cors<cors.CorsRequest>(),
