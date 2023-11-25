@@ -44,10 +44,6 @@ const server = new ApolloServer<MyContext>({
 
 async function setupServer(): Promise<void> {
   await server.start();
-  app.get('/hello', (req, res) => {
-    res.send('Hello, World!');
-  });
-  
   app.use(
     '/graphql',
     cors<cors.CorsRequest>(),
