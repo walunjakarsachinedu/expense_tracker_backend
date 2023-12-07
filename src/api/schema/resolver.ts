@@ -74,20 +74,19 @@ const queryResolvers = {
         'year': args.year,
       }).lean();
       if(!expense) throw getError(ErrorCodes.EXPENSE_NOT_FOUND);
-      return expense;
+      return expense._id;
     },
     addPerson: async (parent, args, context, info) => {
       const expense = await Expense.findById(args.expenseId);
       if(!expense) throw getError(ErrorCodes.EXPENSE_NOT_FOUND);
-      expense.personExpenses.push(
-        {
-          _id: new mongoose.Types.ObjectId().toString(),
-          personName: args.personName,
-          personExpense: []
-        }
-      );
+      const person = {
+        _id: new mongoose.Types.ObjectId().toString(),
+        personName: args.personName,
+        personExpense: []
+      };
+      expense.personExpenses.push(person);
       await expense.save();
-      return expense;
+      return person;
     },
     removePerson: async (parent, args, context, info) => {
       const expense = await Expense.findById(args.expenseId); 
@@ -96,7 +95,7 @@ const queryResolvers = {
       if(!person) throw getError(ErrorCodes.PERSON_NOT_FOUND_IN_EXPENSE);
       expense.personExpenses = expense.personExpenses.filter(person => person._id != args.personId);
       await expense.save();
-      return expense; 
+      return args.expenseId; 
     },
     addPersonExpense: async (parent, args, context, info) => {
       const expense = await Expense.findById(args.expenseId); 
@@ -104,13 +103,14 @@ const queryResolvers = {
       const person = expense.personExpenses.find(person => person._id == args.personId);
       if(!person) throw getError(ErrorCodes.PERSON_NOT_FOUND_IN_EXPENSE);
 
-      person.personExpense.push({
+      const expenseTag = {
         _id: new mongoose.Types.ObjectId().toString(),
         money: args.expenseTag.money,
         tag: args.expenseTag.tag,
-      });
+      }
+      person.personExpense.push(expenseTag);
       await expense.save();
-      return expense;
+      return expenseTag;
     },
     removePersonExpense: async (parent, args, context, info) => {
       const expense = await Expense.findById(args.expenseId); 
@@ -122,7 +122,7 @@ const queryResolvers = {
 
       person.personExpense = person.personExpense.filter(expTag => expTag != expenseTag);
       await expense.save();
-      return expense;
+      return args.expenseId;
     },
     updatePersonExpense: async (parent, args, context, info) => {
       const expense = await Expense.findById(args.expenseId); 
@@ -135,8 +135,17 @@ const queryResolvers = {
       if(args.expenseTag.money) expenseTag.money = args.expenseTag.money;
       if(args.expenseTag.tag) expenseTag.tag = args.expenseTag.tag;
       await expense.save();
-      return expense;
+      return expenseTag;
     },
+    updatePersonName: async (parent, args, context, info) => {
+      const expense = await Expense.findById(args.expenseId); 
+      if(!expense) throw getError(ErrorCodes.EXPENSE_NOT_FOUND);
+      const person = expense.personExpenses.find(person => person._id == args.personId);
+      if(!person) throw getError(ErrorCodes.PERSON_NOT_FOUND_IN_EXPENSE);
+      person.personName = args.name;
+      await expense.save();
+      return args.name;
+    }
   },
 };
 

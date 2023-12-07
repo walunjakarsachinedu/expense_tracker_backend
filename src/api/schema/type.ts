@@ -12,12 +12,13 @@ const typeDefs = `#graphql
     login(email: String!, password: String!): String
     signup(name: String!, email: String!, password: String!): User
     addExpense(month: Month!, year: Int!): Expense @auth
-    removeExpense(month: Month!, year: Int!): Expense @auth
-    addPerson(expenseId: String!, personName: String!): Expense @auth
-    removePerson(expenseId: String!, personId: ID!): Expense @auth
-    addPersonExpense(expenseId: String!, personId: ID!, expenseTag: ExpenseTagInput!): Expense @auth
-    removePersonExpense(expenseId: String!, personId: ID!, expenseTagId: ID!): Expense @auth
-    updatePersonExpense(expenseId: String!, personId: ID!, expenseTagId: ID!, expenseTag: ExpenseTagInput!): Expense @auth
+    removeExpense(month: Month!, year: Int!): ID @auth
+    addPerson(expenseId: String!, personName: String!): PersonExpense @auth
+    removePerson(expenseId: String!, personId: ID!): ID @auth
+    addPersonExpense(expenseId: String!, personId: ID!, expenseTag: ExpenseTagInput!): ExpenseTag @auth
+    removePersonExpense(expenseId: String!, personId: ID!, expenseTagId: ID!): ID @auth
+    updatePersonExpense(expenseId: String!, personId: ID!, expenseTagId: ID!, expenseTag: ExpenseTagInput!): ExpenseTag @auth
+    updatePersonName(expenseId: String!, personId: ID!, name: String!) : String @auth
   }
 
   type User {
