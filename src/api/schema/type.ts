@@ -1,57 +1,60 @@
-const typeDefs = `#graphql
-  enum Month { JANUARY FEBRUARY MARCH APRIL MAY JUNE JULY AUGUST SEPTEMBER OCTOBER NOVEMBER DECEMBER }
+import { Operation } from "fast-json-patch";
+import { ObjectId } from "mongoose";
 
-  type Query {
-    hello(name: String): String 
-    user: User @auth
-    expenses: [Expense]  @auth
-    expenseOfMonth(month: Month!, year: Int!): Expense @auth
-  }
+/** define type of transaction */
+export enum TableType {
+  Expense = "Expense",
+  Income = "Income",
+}
 
-  type Mutation {
-    login(email: String!, password: String!): String
-    signup(name: String!, email: String!, password: String!): User
-    addExpense(month: Month!, year: Int!): Expense @auth
-    removeExpense(month: Month!, year: Int!): ID @auth
-    addPerson(expenseId: String!, personName: String!): PersonExpense @auth
-    removePerson(expenseId: String!, personId: ID!): ID @auth
-    addPersonExpense(expenseId: String!, personId: ID!, expenseTag: ExpenseTagInput!): ExpenseTag @auth
-    removePersonExpense(expenseId: String!, personId: ID!, expenseTagId: ID!): ID @auth
-    updatePersonExpense(expenseId: String!, personId: ID!, expenseTagId: ID!, expenseTag: ExpenseTagInput!): ExpenseTag @auth
-    updatePersonName(expenseId: String!, personId: ID!, name: String!) : String @auth
-  }
+/** Represents a single transaction. */
+export interface Tx {
+  _id: string;
+  money?: string;
+  tag?: string;
+  index: number;
+}
 
-  type User {
-    _id: ID!
-    name: String
-    email: String
-  }
+/** Sturcture of person for client use.  */
+export interface PersonData {
+  _id: string;
+  /** format: MM-yyyy */
+  month: string;
+  type: TableType;
+  index: number;
+  name: string;
+  txs: Record<string, Tx>;
+  txIds: string[];
+  version: string;
+}
 
-  type Expense {
-    _id: ID!
-    userId: String!
-    month: Month!
-    year: Int
-    personExpenses: [PersonExpense]!
-  }
+/** Structure of person for provided interaction. */
+export interface PersonTx {
+  _id?: ObjectId;
+  month: string;
+  type: TableType;
+  index: number;
+  name: string;
+  txs: Tx[];
+  version: string;
+}
 
-  type PersonExpense {
-    _id: ID
-    personName: String
-    personExpense: [ExpenseTag]
-  }
+export type PersonDiff = {
+  added: PersonTx[];
+  updated: {
+    keys: string[];
+    operations: Operation[];
+  };
+  deleted: string[];
+};
 
-  type ExpenseTag {
-    _id: ID!
-    money: Float
-    tag: String
-  }
+export type PersonMinimal = {
+  _id: string;
+  version: string;
+};
 
-  input ExpenseTagInput {
-    money: Float
-    tag: String
-  }
-`;
-
-export default typeDefs;
-
+export type UserData = {
+  _id: string;
+  name: string;
+  email: string;
+};

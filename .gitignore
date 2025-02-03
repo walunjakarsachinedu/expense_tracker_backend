@@ -138,3 +138,5 @@ run.sh
 .DS_Store
 
 
+open-items.txt
+package-lock.json

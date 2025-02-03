@@ -1,51 +1,41 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import { PersonTx } from "../api/schema/type";
 
-const monthsEnum = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-
-const expensesSchema = new Schema({
+const personSchema = new Schema<
+  PersonTx & { userId: mongoose.Schema.Types.ObjectId }
+>({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-  },
-  year: {
-    type: Number,
-    validate: {
-      validator: function (year) {
-        return year >= 2000 && year << 2100;
-      },
-      message: props => 'year should be between 2000 & 2100',
-    }
   },
   month: {
     type: String,
     required: true,
     validate: {
       validator: function (value: String) {
-        return monthsEnum.includes(value.toUpperCase())
+        // valid format .e.g., 01-2025
+        const MMyyyy = /^(0[1-9]|1[0-2])-([2-9]\d{3})$/;
+        return value.match(MMyyyy);
       },
-      message: props => `${props.value} is not a valid month.`,
-    }
-  },
-  personExpenses: [
-    {
-      _id: String,
-      personName: String,
-      personExpense: {
-        type: [
-          {
-            _id: String,
-            money: Number,
-            tag: String,
-          },
-        ],
-        required: true
-      }
+      message: (props) => `${props.value} is not a valid month.`,
     },
-  ],
-
+  },
+  name: String,
+  txs: {
+    type: [
+      {
+        _id: String,
+        index: Number,
+        money: Number,
+        tag: String,
+      },
+    ],
+    required: true,
+  },
 });
 
+const Person = mongoose.model<
+  PersonTx & { userId: mongoose.Schema.Types.ObjectId }
+>("persons", personSchema);
 
-const Expense = mongoose.model("expenses", expensesSchema);
-
-export default Expense;
+export default Person;

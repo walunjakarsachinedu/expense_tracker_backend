@@ -1,4 +1,7 @@
 {
+  "mongodb": {
+    "dbName": "expense-db"
+  },
   "graphql": {
     "introspection": false
   }

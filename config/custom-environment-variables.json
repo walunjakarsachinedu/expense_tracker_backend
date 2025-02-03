@@ -1,5 +1,5 @@
 {
-  "mongodb" : {
+  "mongodb": {
     "username": "expense_tracker_app_mongodb_username",
     "password": "expense_tracker_app_mongodb_password"
   },

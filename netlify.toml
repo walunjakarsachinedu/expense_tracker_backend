@@ -6,7 +6,7 @@
   include = ["config/*.json"]
 [[redirects]]
   force = true
-  from = "/graphql/*"
+  from = "/v1/graphql/*"
   status = 200
   to = "/.netlify/functions/graphql/:splat"
 
