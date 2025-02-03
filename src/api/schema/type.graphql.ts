@@ -51,10 +51,10 @@ const typeDefs = `#graphql
   }
 
   input PersonInput {
-    _id: ID
+    _id: ID!
     month: String!
-    type: TableType
-    index: Int
+    type: TableType!
+    index: Int!
     name: String
     txs: [TxInput] 
     version: String
