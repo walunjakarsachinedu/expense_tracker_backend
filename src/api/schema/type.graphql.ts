@@ -27,8 +27,8 @@ const typeDefs = `#graphql
     month: String!
     type: TableType!
     index: Int!
-    name: String
-    txs: [Tx]!
+    name: String!
+    txs: [Tx!]
     version: String!
   }
 

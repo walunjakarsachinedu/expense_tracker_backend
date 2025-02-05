@@ -30,7 +30,7 @@ export interface PersonData {
 
 /** Structure of person use for database storage. */
 export interface PersonTx {
-  _id: ObjectId;
+  _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   /** format: MM-yyyy */
   month: string;

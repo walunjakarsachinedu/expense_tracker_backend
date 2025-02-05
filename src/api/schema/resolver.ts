@@ -88,7 +88,7 @@ const queryResolvers = {
       const updates: {
         added?: PersonWithoutId[];
         deleted?: PersonDiff["deleted"];
-        updated?: PersonData[];
+        updated?: PersonTx[];
       } = {};
 
       if (diff.added) {
@@ -106,10 +106,14 @@ const queryResolvers = {
         const persons: PersonTx[] = await Person.find({
           _id: { $in: diff.updated.keys.map((id) => new Types.ObjectId(id)) },
         });
-        updates.updated = personUtils.applyChanges({
-          persons,
-          operations: diff.updated.operations,
-        });
+        updates.updated = personUtils
+          .applyChanges({
+            persons,
+            operations: diff.updated.operations,
+          })
+          .map((person) =>
+            personUtils.personToPersonTx(person, context.userId)
+          );
       }
 
       const dbOperations: FirstArgument<typeof Person.collection.bulkWrite> =
@@ -121,11 +125,11 @@ const queryResolvers = {
       );
       updates.updated?.forEach((person) =>
         dbOperations.push({
-          updateOne: {
-            update: new Person(person).toObject(),
+          replaceOne: {
             filter: {
               _id: new mongoose.Types.ObjectId(person._id),
             },
+            replacement: new Person(person).toObject(),
           },
         })
       );
