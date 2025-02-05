@@ -1,7 +1,6 @@
 import { applyOperation, Operation } from "fast-json-patch";
 import { PersonData, PersonTx, Tx } from "../api/schema/type";
 import { _deepClone } from "fast-json-patch/module/helpers";
-import mongoose from "mongoose";
 
 class PersonUtils {
   personTxToPerson(person: PersonTx): PersonData {
@@ -16,30 +15,8 @@ class PersonUtils {
         txMap[tx.index] = tx;
         return txMap;
       }, {}),
-      txIds: person.txs.sort((a, b) => a.index - b.index).map((tx) => tx._id),
+      txIds: person.txs.sort((a, b) => a.index - b.index).map((tx) => tx.index),
     };
-  }
-
-  personToPersonTx(person: PersonData): PersonTx {
-    return {
-      _id: new mongoose.Schema.ObjectId(person._id),
-      month: person.month,
-      type: person.type,
-      index: person.index,
-      name: person.name,
-      txs: Object.values(person.txs),
-      version: person.version,
-    };
-  }
-
-  _parseNumber(numStr?: string): number | undefined {
-    try {
-      if (numStr) {
-        return parseInt(numStr);
-      }
-    } catch {
-      // error
-    }
   }
 
   applyChanges(updates: { persons: PersonTx[]; operations: Operation[] }) {

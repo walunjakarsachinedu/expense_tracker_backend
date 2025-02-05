@@ -1,5 +1,5 @@
 import { Operation } from "fast-json-patch";
-import { ObjectId } from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 
 /** define type of transaction */
 export enum TableType {
@@ -9,13 +9,12 @@ export enum TableType {
 
 /** Represents a single transaction. */
 export interface Tx {
-  _id: string;
+  index: number;
   money?: string;
   tag?: string;
-  index: number;
 }
 
-/** Sturcture of person for client use.  */
+/** Structure of person used by client.  */
 export interface PersonData {
   _id: string;
   /** format: MM-yyyy */
@@ -23,14 +22,17 @@ export interface PersonData {
   type: TableType;
   index: number;
   name: string;
+  // map of tx.index -> tx
   txs: Record<string, Tx>;
-  txIds: string[];
+  txIds: number[];
   version: string;
 }
 
-/** Structure of person for provided interaction. */
+/** Structure of person use for database storage. */
 export interface PersonTx {
-  _id?: ObjectId;
+  _id: ObjectId;
+  userId: mongoose.Types.ObjectId;
+  /** format: MM-yyyy */
   month: string;
   type: TableType;
   index: number;
@@ -39,13 +41,23 @@ export interface PersonTx {
   version: string;
 }
 
+export type PersonWithoutId = Omit<PersonTx, "_id">;
+
+/** structure of person data send by client. */
+export type PersonInput = Omit<PersonWithoutId, "userId">;
+
 export type PersonDiff = {
-  added: PersonTx[];
-  updated: {
+  added?: PersonInput[];
+  updated?: {
     keys: string[];
     operations: Operation[];
   };
-  deleted: string[];
+  deleted?: string[];
+};
+
+export type PersonDiffResponse = {
+  added?: string[];
+  deleted?: number;
 };
 
 export type PersonMinimal = {

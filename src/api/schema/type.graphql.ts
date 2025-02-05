@@ -13,35 +13,40 @@ const typeDefs = `#graphql
   type Mutation {
     login(email: String!, password: String!): String
     signup(name: String!, email: String!, password: String!): User
-    applyUpdates(diff: PersonDiff): String @auth # returns status
+    applyUpdates(diff: PersonDiff): PersonDiffResponse @auth # returns status
   }
 
   type User {
     _id: ID!
-    name: String
-    email: String
+    name: String!
+    email: String!
   }
 
   type Person {
-    _id: ID
+    _id: ID!
     month: String!
-    type: TableType
-    index: Int
+    type: TableType!
+    index: Int!
     name: String
-    txs: [Tx]
-    version: String
+    txs: [Tx]!
+    version: String!
   }
 
   type Tx {
-    _id: ID!
+    index: Int!
     money: Float
     tag: String
-    index: Int
   }
 
   type PersonMinimal {
     _id: ID!
     version: String!
+  }
+
+  type PersonDiffResponse {
+    # list of ids of person in same order of person provided in input
+    added: [String!]
+    deleted: Int
   }
 
   input PersonDiff {
@@ -51,20 +56,18 @@ const typeDefs = `#graphql
   }
 
   input PersonInput {
-    _id: ID!
     month: String!
     type: TableType!
     index: Int!
-    name: String
-    txs: [TxInput] 
-    version: String
+    name: String!
+    txs: [TxInput]!
+    version: String!
   }
 
   input TxInput {
-    _id: ID!
+    index: Int!
     money: Float
     tag: String
-    index: Int
   }
 
   input UpdatedInput {

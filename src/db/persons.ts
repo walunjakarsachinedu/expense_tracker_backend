@@ -1,14 +1,13 @@
 import mongoose, { Schema } from "mongoose";
 import { PersonTx } from "../api/schema/type";
 
-const personSchema = new Schema<
-  PersonTx & { userId: mongoose.Schema.Types.ObjectId }
->({
+const personSchema = new Schema<PersonTx>({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
   },
   month: {
+    /** format: MM-yyyy */
     type: String,
     required: true,
     validate: {
@@ -20,22 +19,34 @@ const personSchema = new Schema<
       message: (props) => `${props.value} is not a valid month.`,
     },
   },
+  type: {
+    type: String,
+    enum: ["Expense", "Income"],
+  },
+  index: {
+    type: Number,
+    required: true,
+  },
   name: String,
   txs: {
     type: [
       {
-        _id: String,
-        index: Number,
+        index: {
+          type: Number,
+          required: true,
+        },
         money: Number,
         tag: String,
       },
     ],
     required: true,
   },
+  version: {
+    type: String,
+    required: true,
+  },
 });
 
-const Person = mongoose.model<
-  PersonTx & { userId: mongoose.Schema.Types.ObjectId }
->("persons", personSchema);
+const Person = mongoose.model<PersonTx>("persons", personSchema);
 
 export default Person;

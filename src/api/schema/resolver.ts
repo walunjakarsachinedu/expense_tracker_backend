@@ -4,14 +4,16 @@ import jwt, { SignOptions } from "jsonwebtoken";
 import mongoose, { Types } from "mongoose";
 import personUtils from "../../common/personUtils.js";
 import { configPath, getConfig } from "../../config-path.js";
-import Person from "../../db/expenses.js";
+import Person from "../../db/persons.js";
 import User from "../../db/users.js";
 import { ErrorCodes, getError } from "../errors.js";
 import {
   PersonData,
   PersonDiff,
+  PersonDiffResponse,
   PersonMinimal,
   PersonTx,
+  PersonWithoutId,
   UserData,
 } from "./type.js";
 
@@ -82,10 +84,10 @@ const queryResolvers = {
       { diff }: { diff: PersonDiff },
       context,
       info
-    ) => {
+    ): Promise<PersonDiffResponse> => {
       const updates: {
-        added?: (PersonTx & { userId: string })[];
-        deleted?: string[];
+        added?: PersonWithoutId[];
+        deleted?: PersonDiff["deleted"];
         updated?: PersonData[];
       } = {};
 
@@ -93,7 +95,7 @@ const queryResolvers = {
         updates.added = diff.added.map((person) => {
           return {
             ...person,
-            userId: context.userId as string,
+            userId: new mongoose.Types.ObjectId(context.userId),
           };
         });
       }
@@ -122,7 +124,7 @@ const queryResolvers = {
           updateOne: {
             update: new Person(person).toObject(),
             filter: {
-              _id: new mongoose.Schema.Types.ObjectId(person._id),
+              _id: new mongoose.Types.ObjectId(person._id),
             },
           },
         })
@@ -145,9 +147,22 @@ const queryResolvers = {
         const response = await Person.collection.bulkWrite(dbOperations, {
           ordered: false,
         });
-        return JSON.stringify(response);
+        return {
+          added:
+            updates.added && updates.added.length
+              ? response.insertedIds
+                ? Object.keys(response.insertedIds)
+                    .sort((a, b) => Number(a) - Number(b))
+                    .map((index) => response.insertedIds[index])
+                : []
+              : undefined,
+          deleted:
+            updates.deleted && updates.deleted.length
+              ? response.deletedCount ?? 0
+              : undefined,
+        };
       }
-      return "No Changes Provided";
+      return { added: [], deleted: 0 };
     },
   },
 };
