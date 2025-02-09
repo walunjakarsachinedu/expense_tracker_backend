@@ -6,20 +6,6 @@ export enum TableType {
   Income = "Income",
 }
 
-/** Structure of person used by client.  */
-export interface PersonData {
-  _id: string;
-  /** format: MM-yyyy */
-  month: string;
-  type: TableType;
-  index: number;
-  name: string;
-  // map of tx._id -> tx
-  txs: Record<string, Tx>;
-  txIds: string[];
-  version: string;
-}
-
 /** Structure of person use for database storage. */
 export interface PersonTx {
   _id: mongoose.Types.ObjectId;
