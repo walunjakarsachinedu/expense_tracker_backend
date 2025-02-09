@@ -1,7 +1,5 @@
-import { applyOperation, Operation } from "fast-json-patch";
-import { PersonData, PersonTx, Tx } from "../api/schema/type";
-import { _deepClone } from "fast-json-patch/module/helpers";
 import mongoose from "mongoose";
+import { PersonData, PersonTx, Tx } from "../api/schema/type";
 
 class PersonUtils {
   personTxToPerson(person: PersonTx): PersonData {
@@ -13,10 +11,10 @@ class PersonUtils {
       type: person.type,
       version: person.version,
       txs: person.txs.reduce<Record<string, Tx>>((txMap, tx) => {
-        txMap[tx.index] = tx;
+        txMap[tx._id] = tx;
         return txMap;
       }, {}),
-      txIds: person.txs.sort((a, b) => a.index - b.index).map((tx) => tx.index),
+      txIds: person.txs.sort((a, b) => a.index - b.index).map((tx) => tx._id),
     };
   }
   personToPersonTx(person: PersonData, userId: string): PersonTx {
@@ -30,34 +28,6 @@ class PersonUtils {
       txs: Object.values(person.txs),
       version: person.version,
     };
-  }
-
-  applyChanges(updates: { persons: PersonTx[]; operations: Operation[] }) {
-    const personMap = updates.persons
-      .map((person) => this.personTxToPerson(person))
-      .reduce<Record<string, PersonData>>((personMp, person) => {
-        personMp[person._id] = person;
-        return personMp;
-      }, {});
-
-    const updatedPersons = this._applyPatches(updates.operations, personMap);
-    return Object.values(updatedPersons);
-  }
-
-  private _applyPatches(
-    operations: Operation[],
-    personMap: Record<string, PersonData>
-  ): Record<string, PersonData> {
-    let updatedPersonMap = _deepClone(personMap);
-    operations.map(
-      (operation) =>
-        (updatedPersonMap = applyOperation(
-          updatedPersonMap,
-          operation,
-          false
-        ).newDocument)
-    );
-    return updatedPersonMap;
   }
 }
 

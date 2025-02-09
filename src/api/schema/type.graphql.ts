@@ -51,7 +51,7 @@ const typeDefs = `#graphql
 
   input PersonDiff {
     added: [PersonInput!]
-    updated: UpdatedInput
+    updated: [PersonPatch!]
     deleted: [String!]
   }
 
@@ -60,19 +60,38 @@ const typeDefs = `#graphql
     type: TableType!
     index: Int!
     name: String!
-    txs: [TxInput]!
+    txs: [TxInput!]!
     version: String!
   }
 
+
+  input PersonPatch {
+    _id: ID!
+    index: Int
+    name: String
+    txDiff: TxDiff
+    version: String!
+  }
+  
+  input TxDiff {
+    added: [TxInput!]
+    updated: [TxPatch!]
+    deleted: [String!]
+  }
+
+
   input TxInput {
+    _id: ID!
     index: Int!
     money: Float
     tag: String
   }
 
-  input UpdatedInput {
-    keys: [String]
-    operations: [JSON!]
+  input TxPatch {
+    _id: ID!
+    index: Int
+    money: Float
+    tag: String
   }
 `;
 

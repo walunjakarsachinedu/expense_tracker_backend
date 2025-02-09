@@ -1,19 +1,20 @@
 import bcrypt from "bcrypt";
 import GraphQLJSON from "graphql-type-json";
 import jwt, { SignOptions } from "jsonwebtoken";
-import mongoose, { Types } from "mongoose";
-import personUtils from "../../common/personUtils.js";
+import { AnyBulkWriteOperation, BSON } from "mongodb";
+import mongoose, { InferSchemaType, Types } from "mongoose";
 import { configPath, getConfig } from "../../config-path.js";
 import Person from "../../db/persons.js";
 import User from "../../db/users.js";
 import { ErrorCodes, getError } from "../errors.js";
 import {
-  PersonData,
   PersonDiff,
   PersonDiffResponse,
   PersonMinimal,
+  PersonPatch,
   PersonTx,
   PersonWithoutId,
+  TxPatch,
   UserData,
 } from "./type.js";
 
@@ -85,62 +86,91 @@ const queryResolvers = {
       context,
       info
     ): Promise<PersonDiffResponse> => {
-      const updates: {
-        added?: PersonWithoutId[];
-        deleted?: PersonDiff["deleted"];
-        updated?: PersonTx[];
-      } = {};
+      const dbOperations: AnyBulkWriteOperation<
+        InferSchemaType<typeof Person.schema>
+      >[] = [];
 
-      if (diff.added) {
-        updates.added = diff.added.map((person) => {
-          return {
-            ...person,
-            userId: new mongoose.Types.ObjectId(context.userId),
-          };
-        });
-      }
-      if (diff.deleted) {
-        updates.deleted = diff.deleted;
-      }
-      if (diff.updated) {
-        const persons: PersonTx[] = await Person.find({
-          _id: { $in: diff.updated.keys.map((id) => new Types.ObjectId(id)) },
-        });
-        updates.updated = personUtils
-          .applyChanges({
-            persons,
-            operations: diff.updated.operations,
+      diff.added
+        ?.map((person) => ({
+          ...person,
+          userId: new mongoose.Types.ObjectId(context.userId),
+        }))
+        .forEach((person) =>
+          dbOperations.push({
+            insertOne: { document: new Person(person).toObject() },
           })
-          .map((person) =>
-            personUtils.personToPersonTx(person, context.userId)
-          );
-      }
+        );
 
-      const dbOperations: FirstArgument<typeof Person.collection.bulkWrite> =
-        [];
-      updates.added?.forEach((person) =>
-        dbOperations.push({
-          insertOne: { document: new Person(person).toObject() },
-        })
-      );
-      updates.updated?.forEach((person) =>
-        dbOperations.push({
-          replaceOne: {
-            filter: {
-              _id: new mongoose.Types.ObjectId(person._id),
+      diff.updated?.forEach((personPatch) => {
+        if (personPatch.txDiff?.added?.length) {
+          dbOperations.push({
+            updateOne: {
+              filter: { _id: new mongoose.Types.ObjectId(personPatch._id) },
+              update: {
+                $push: {
+                  txs: {
+                    $each: personPatch.txDiff?.added,
+                  },
+                },
+              },
             },
-            replacement: new Person(person).toObject(),
-          },
-        })
-      );
-      if (updates.deleted) {
+          });
+        }
+        if (personPatch.txDiff?.deleted?.length) {
+          dbOperations.push({
+            updateOne: {
+              filter: { _id: new mongoose.Types.ObjectId(personPatch._id) },
+              update: {
+                $pull: {
+                  txs: {
+                    _id: {
+                      $in: personPatch.txDiff?.deleted ?? [],
+                    },
+                  },
+                },
+              },
+            },
+          });
+        }
+
+        const personDetailsUpdates = Object.entries(personPatch).filter(
+          ([key]: [keyof PersonPatch, any]) => key !== "_id" && key !== "txDiff"
+        );
+
+        if (
+          personDetailsUpdates.length ||
+          personPatch.txDiff?.updated?.length
+        ) {
+          dbOperations.push({
+            updateOne: {
+              filter: { _id: new mongoose.Types.ObjectId(personPatch._id) },
+              update: {
+                $set: Object.fromEntries([
+                  ...personDetailsUpdates,
+                  ...(personPatch.txDiff?.updated?.flatMap((tx) =>
+                    Object.entries(tx)
+                      .filter(([key]: [keyof TxPatch, any]) => key !== "_id")
+                      .map(([key, value]) => [
+                        `txs.$[elem${tx._id}].${key}`,
+                        value,
+                      ])
+                  ) ?? []),
+                ]),
+              },
+              arrayFilters: personPatch.txDiff?.updated?.map((tx) => ({
+                [`elem${tx._id}._id`]: tx._id,
+              })),
+            },
+          });
+        }
+      });
+
+      if (diff.deleted) {
         dbOperations.push({
           deleteMany: {
             filter: {
               _id: {
-                $in: updates.deleted.map(
-                  (id) => new mongoose.Types.ObjectId(id)
-                ),
+                $in: diff.deleted.map((id) => new mongoose.Types.ObjectId(id)),
               },
             },
           },
@@ -148,22 +178,23 @@ const queryResolvers = {
       }
 
       if (dbOperations.length > 0) {
-        const response = await Person.collection.bulkWrite(dbOperations, {
-          ordered: false,
-        });
+        const response = await Person.collection.bulkWrite(
+          dbOperations as AnyBulkWriteOperation<BSON.Document>[],
+          {
+            ordered: false,
+          }
+        );
         return {
-          added:
-            updates.added && updates.added.length
-              ? response.insertedIds
-                ? Object.keys(response.insertedIds)
-                    .sort((a, b) => Number(a) - Number(b))
-                    .map((index) => response.insertedIds[index])
-                : []
-              : undefined,
-          deleted:
-            updates.deleted && updates.deleted.length
-              ? response.deletedCount ?? 0
-              : undefined,
+          added: diff.added?.length
+            ? response.insertedIds
+              ? Object.keys(response.insertedIds)
+                  .sort((a, b) => Number(a) - Number(b))
+                  .map((index) => response.insertedIds[index])
+              : []
+            : undefined,
+          deleted: diff.deleted?.length
+            ? response.deletedCount ?? 0
+            : undefined,
         };
       }
       return { added: [], deleted: 0 };

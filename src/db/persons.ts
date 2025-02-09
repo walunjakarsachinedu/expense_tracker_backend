@@ -31,6 +31,10 @@ const personSchema = new Schema<PersonTx>({
   txs: {
     type: [
       {
+        _id: {
+          type: String,
+          required: true,
+        },
         index: {
           type: Number,
           required: true,
