@@ -2,6 +2,10 @@ import mongoose, { Schema } from "mongoose";
 import { PersonTx } from "../api/schema/type";
 
 const personSchema = new Schema<PersonTx>({
+  _id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,

@@ -33,6 +33,7 @@ const typeDefs = `#graphql
   }
 
   type Tx {
+    _id: ID!
     index: Int!
     money: Float
     tag: String
@@ -44,9 +45,27 @@ const typeDefs = `#graphql
   }
 
   type PersonDiffResponse {
-    # list of ids of person in same order of person provided in input
-    added: [String!]
-    deleted: Int
+    added: [AddedPersonId!]
+    updated: [UpdatedPersonId!]
+    deleted: [ID!]
+  }
+
+  type AddedPersonId {
+    _id: StoredId!
+    txs: [StoredId!]!
+  }
+
+  type UpdatedPersonId {
+    _id: String!
+    txs: [StoredId!]
+    deletedTxs: [String!]
+  }
+
+  type StoredId {
+    # tmporary id send by user to create an entity
+    tmpId: ID!
+    # id use by server to store an entity
+    storedId: ID!
   }
 
   input PersonDiff {
@@ -56,6 +75,7 @@ const typeDefs = `#graphql
   }
 
   input PersonInput {
+    _id: ID!
     month: String!
     type: TableType!
     index: Int!

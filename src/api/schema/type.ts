@@ -24,14 +24,33 @@ export type PersonMinimal = {
   version: string;
 };
 
-export type PersonWithoutId = Omit<PersonTx, "_id">;
-
 /** structure of person data send by client. */
-export type PersonInput = Omit<PersonWithoutId, "userId">;
+export type PersonInput = Prettify<
+  Omit<PersonTx, "userId" | "_id"> & { _id: string }
+>;
 
 export type PersonDiffResponse = {
-  added?: string[];
-  deleted?: number;
+  added?: AddedPersonId[];
+  updated?: UpdatedPersonId[];
+  deleted?: string[];
+};
+
+export type AddedPersonId = {
+  _id: StoredId;
+  txs: StoredId[];
+};
+
+export type UpdatedPersonId = {
+  _id: string;
+  txs?: StoredId[];
+  deletedTxs?: string[];
+};
+
+export type StoredId = {
+  // tmporary id send by user to create an entity
+  tmpId: string;
+  // id use by server to store an entity
+  storedId: string;
 };
 
 export type PersonDiff = {
@@ -41,7 +60,7 @@ export type PersonDiff = {
 };
 
 export type PersonPatch = {
-  _id: mongoose.Types.ObjectId;
+  _id: string;
   index?: number;
   name?: string;
   txDiff?: TxDiff;

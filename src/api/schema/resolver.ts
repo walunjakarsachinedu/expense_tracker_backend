@@ -8,12 +8,13 @@ import Person from "../../db/persons.js";
 import User from "../../db/users.js";
 import { ErrorCodes, getError } from "../errors.js";
 import {
+  AddedPersonId,
+  UpdatedPersonId,
   PersonDiff,
   PersonDiffResponse,
   PersonMinimal,
   PersonPatch,
   PersonTx,
-  PersonWithoutId,
   TxPatch,
   UserData,
 } from "./type.js";
@@ -90,9 +91,15 @@ const queryResolvers = {
         InferSchemaType<typeof Person.schema>
       >[] = [];
 
+      const idMappingResult = mapTempIdsToServerIds(diff);
+      diff = idMappingResult.personDiff;
+      const personDiffResponse: PersonDiffResponse =
+        idMappingResult.personDiffResponse;
+
       diff.added
         ?.map((person) => ({
           ...person,
+          _id: new mongoose.Types.ObjectId(person._id),
           userId: new mongoose.Types.ObjectId(context.userId),
         }))
         .forEach((person) =>
@@ -184,22 +191,68 @@ const queryResolvers = {
             ordered: false,
           }
         );
-        return {
-          added: diff.added?.length
-            ? response.insertedIds
-              ? Object.keys(response.insertedIds)
-                  .sort((a, b) => Number(a) - Number(b))
-                  .map((index) => response.insertedIds[index])
-              : []
-            : undefined,
-          deleted: diff.deleted?.length
-            ? response.deletedCount ?? 0
-            : undefined,
-        };
       }
-      return { added: [], deleted: 0 };
+      return personDiffResponse;
     },
   },
 };
+
+/**
+ * Associate each entity with new id and use user provided temporary id & new id to prepare `PersonDiffResponse`.
+ */
+function mapTempIdsToServerIds(personDiff: PersonDiff): {
+  personDiff: PersonDiff;
+  personDiffResponse: PersonDiffResponse;
+} {
+  const personDiffResponse: PersonDiffResponse = {};
+
+  if (personDiff.added?.length) {
+    personDiffResponse.added = [];
+    personDiff.added?.forEach((person) => {
+      const tmpId = person._id;
+      const storedId = new mongoose.Types.ObjectId();
+      person._id = storedId.toHexString();
+
+      const txs: AddedPersonId["txs"] = person.txs.map((tx) => {
+        const tmpId = tx._id;
+        const storedId = new mongoose.Types.ObjectId();
+        tx._id = storedId.toHexString();
+        return { tmpId: tmpId.toString(), storedId: storedId.toHexString() };
+      });
+      personDiffResponse.added?.push({
+        _id: { tmpId: tmpId, storedId: storedId.toHexString() },
+        txs,
+      });
+    });
+  }
+
+  if (personDiff.updated?.length) {
+    personDiffResponse.updated = [];
+    personDiff.updated.forEach((personPatch) => {
+      const updatedPersonId: UpdatedPersonId = { _id: personPatch._id };
+      if (personPatch.txDiff?.added?.length) {
+        updatedPersonId.txs = personPatch.txDiff?.added?.map((tx) => {
+          const tmpId = tx._id;
+          const storedId = new mongoose.Types.ObjectId();
+          tx._id = storedId.toHexString();
+          return {
+            tmpId: tmpId.toString(),
+            storedId: storedId.toHexString(),
+          };
+        });
+      }
+      if (personPatch.txDiff?.deleted?.length) {
+        updatedPersonId.deletedTxs = personPatch.txDiff.deleted;
+      }
+      personDiffResponse.updated!.push(updatedPersonId);
+    });
+  }
+
+  if (personDiff.deleted?.length) {
+    personDiffResponse.deleted = personDiff.deleted;
+  }
+
+  return { personDiff, personDiffResponse };
+}
 
 export default queryResolvers;
