@@ -78,14 +78,14 @@ export type TxDiff = {
 export interface Tx {
   _id: string;
   index: number;
-  money?: string;
+  money?: number;
   tag?: string;
 }
 
 export type TxPatch = {
   _id: string;
   index?: number;
-  money?: string;
+  money?: number;
   tag?: string;
 };
 

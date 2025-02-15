@@ -44,29 +44,6 @@ const typeDefs = `#graphql
     version: String!
   }
 
-  type PersonDiffResponse {
-    added: [AddedPersonId!]
-    updated: [UpdatedPersonId!]
-    deleted: [ID!]
-  }
-
-  type AddedPersonId {
-    _id: StoredId!
-    txs: [StoredId!]!
-  }
-
-  type UpdatedPersonId {
-    _id: String!
-    txs: [StoredId!]
-    deletedTxs: [String!]
-  }
-
-  type StoredId {
-    # tmporary id send by user to create an entity
-    tmpId: ID!
-    # id use by server to store an entity
-    storedId: ID!
-  }
 
   input PersonDiff {
     added: [PersonInput!]
@@ -112,6 +89,31 @@ const typeDefs = `#graphql
     index: Int
     money: Float
     tag: String
+  }
+
+
+  type PersonDiffResponse {
+    added: [AddedPersonId!]
+    updated: [UpdatedPersonId!]
+    deleted: [ID!]
+  }
+
+  type AddedPersonId {
+    _id: StoredId!
+    txs: [StoredId!]!
+  }
+
+  type UpdatedPersonId {
+    _id: String!
+    txs: [StoredId!]
+    deletedTxs: [String!]
+  }
+
+  type StoredId {
+    # tmporary id send by user to create an entity
+    tmpId: ID!
+    # id use by server to store an entity
+    storedId: ID!
   }
 `;
 
