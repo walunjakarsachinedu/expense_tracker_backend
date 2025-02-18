@@ -29,28 +29,14 @@ export type PersonInput = Prettify<
   Omit<PersonTx, "userId" | "_id"> & { _id: string }
 >;
 
-export type PersonDiffResponse = {
-  added?: AddedPersonId[];
-  updated?: UpdatedPersonId[];
-  deleted?: string[];
+export type Conflicts = {
+  conflictPersons?: ConflictPerson[];
 };
 
-export type AddedPersonId = {
-  _id: StoredId;
-  txs: StoredId[];
-};
-
-export type UpdatedPersonId = {
+export type ConflictPerson = {
   _id: string;
-  txs?: StoredId[];
-  deletedTxs?: string[];
-};
-
-export type StoredId = {
-  // tmporary id send by user to create an entity
-  tmpId: string;
-  // id use by server to store an entity
-  storedId: string;
+  isDeleted: boolean;
+  txs?: { _id: string; isDeleted: boolean }[];
 };
 
 export type PersonDiff = {

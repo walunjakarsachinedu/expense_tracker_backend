@@ -8,10 +8,8 @@ import Person from "../../db/persons.js";
 import User from "../../db/users.js";
 import { ErrorCodes, getError } from "../errors.js";
 import {
-  AddedPersonId,
-  UpdatedPersonId,
+  Conflicts,
   PersonDiff,
-  PersonDiffResponse,
   PersonMinimal,
   PersonPatch,
   PersonTx,
@@ -86,15 +84,10 @@ const queryResolvers = {
       { diff }: { diff: PersonDiff },
       context,
       info
-    ): Promise<PersonDiffResponse> => {
+    ): Promise<Conflicts> => {
       const dbOperations: AnyBulkWriteOperation<
         InferSchemaType<typeof Person.schema>
       >[] = [];
-
-      const idMappingResult = mapTempIdsToServerIds(diff);
-      diff = idMappingResult.personDiff;
-      const personDiffResponse: PersonDiffResponse =
-        idMappingResult.personDiffResponse;
 
       diff.added
         ?.map((person) => ({
@@ -192,67 +185,65 @@ const queryResolvers = {
           }
         );
       }
-      return personDiffResponse;
+
+      return getConflicts(diff, context.userId);
     },
   },
 };
 
 /**
- * Associate each entity with new id and use user provided temporary id & new id to prepare `PersonDiffResponse`.
+ * @returns all persons and transaction tags that the current user is updating but were deleted by another login
  */
-function mapTempIdsToServerIds(personDiff: PersonDiff): {
-  personDiff: PersonDiff;
-  personDiffResponse: PersonDiffResponse;
-} {
-  const personDiffResponse: PersonDiffResponse = {};
-
-  if (personDiff.added?.length) {
-    personDiffResponse.added = [];
-    personDiff.added?.forEach((person) => {
-      const tmpId = person._id;
-      const storedId = new mongoose.Types.ObjectId();
-      person._id = storedId.toHexString();
-
-      const txs: AddedPersonId["txs"] = person.txs.map((tx) => {
-        const tmpId = tx._id;
-        const storedId = new mongoose.Types.ObjectId();
-        tx._id = storedId.toHexString();
-        return { tmpId: tmpId.toString(), storedId: storedId.toHexString() };
-      });
-      personDiffResponse.added?.push({
-        _id: { tmpId: tmpId, storedId: storedId.toHexString() },
-        txs,
-      });
-    });
-  }
+async function getConflicts(
+  personDiff: PersonDiff,
+  userId: string
+): Promise<Conflicts> {
+  const conflicts: Conflicts = {};
 
   if (personDiff.updated?.length) {
-    personDiffResponse.updated = [];
-    personDiff.updated.forEach((personPatch) => {
-      const updatedPersonId: UpdatedPersonId = { _id: personPatch._id };
-      if (personPatch.txDiff?.added?.length) {
-        updatedPersonId.txs = personPatch.txDiff?.added?.map((tx) => {
-          const tmpId = tx._id;
-          const storedId = new mongoose.Types.ObjectId();
-          tx._id = storedId.toHexString();
-          return {
-            tmpId: tmpId.toString(),
-            storedId: storedId.toHexString(),
-          };
-        });
-      }
-      if (personPatch.txDiff?.deleted?.length) {
-        updatedPersonId.deletedTxs = personPatch.txDiff.deleted;
-      }
-      personDiffResponse.updated!.push(updatedPersonId);
-    });
+    const personIds = personDiff.updated?.map((person) => person._id);
+    const existingPersons = await Person.where("userId")
+      .equals(userId)
+      .where("_id")
+      .in(personIds)
+      .lean();
+
+    // just get deleted persons
+    const deletedPersons = personIds
+      .filter(
+        (id) =>
+          !existingPersons.find((person) => person._id.toHexString() === id)
+      )
+      .map((id) => ({ _id: id, isDeleted: true }));
+
+    // just get deleted transaction tags
+    const deletedTxs = personDiff.updated
+      .map((updatedPerson) => ({
+        updatedPerson,
+        existingPerson: existingPersons.find(
+          (person) => person._id.toHexString() === updatedPerson._id
+        ),
+      }))
+      .filter((el) => el.updatedPerson.txDiff?.updated && el.existingPerson)
+      .map((el) => {
+        console.log(el.existingPerson?._id, el.updatedPerson._id);
+        return {
+          _id: el.updatedPerson._id,
+          isDeleted: false,
+          txs: el.updatedPerson
+            .txDiff!.updated!.filter(
+              (txEl) =>
+                !el.existingPerson?.txs.find((tx) => tx._id === txEl._id)
+            )
+            .map((txEl) => ({ _id: txEl._id, isDeleted: true })),
+        };
+      })
+      .filter((el) => el.txs.length);
+
+    conflicts.conflictPersons = [...deletedPersons, ...deletedTxs];
   }
 
-  if (personDiff.deleted?.length) {
-    personDiffResponse.deleted = personDiff.deleted;
-  }
-
-  return { personDiff, personDiffResponse };
+  return conflicts;
 }
 
 export default queryResolvers;

@@ -13,7 +13,7 @@ const typeDefs = `#graphql
   type Mutation {
     login(email: String!, password: String!): String
     signup(name: String!, email: String!, password: String!): User
-    applyUpdates(diff: PersonDiff): PersonDiffResponse @auth # returns status
+    applyUpdates(diff: PersonDiff): Conflicts @auth # returns status
   }
 
   type User {
@@ -91,30 +91,25 @@ const typeDefs = `#graphql
     tag: String
   }
 
-
-  type PersonDiffResponse {
-    added: [AddedPersonId!]
-    updated: [UpdatedPersonId!]
-    deleted: [ID!]
+  type Conflicts {
+    # Persons deleted by another login during update  
+    conflictPersons: [ConflictPerson!]
   }
 
-  type AddedPersonId {
-    _id: StoredId!
-    txs: [StoredId!]!
-  }
-
-  type UpdatedPersonId {
+  type ConflictPerson {
     _id: String!
-    txs: [StoredId!]
-    deletedTxs: [String!]
+    # Indicates if the person is deleted  
+    isDeleted: Boolean!
+    txs: [ConflictTx!]
   }
 
-  type StoredId {
-    # tmporary id send by user to create an entity
-    tmpId: ID!
-    # id use by server to store an entity
-    storedId: ID!
+  # Transactions deleted by another login during update  
+  type ConflictTx {
+    _id: String!
+    # Indicates if the transaction is deleted  
+    isDeleted: Boolean!
   }
+
 `;
 
 export default typeDefs;
