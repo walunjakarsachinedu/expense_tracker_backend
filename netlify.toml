@@ -3,7 +3,7 @@
   node_bundler = "esbuild"
   directory = "src/functions"
 [build]
-  include = ["config/*.json"]
+  include = ["config"]
 [[redirects]]
   force = true
   from = "/v1/graphql/*"

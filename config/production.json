@@ -3,6 +3,6 @@
     "dbName": "expense-db"
   },
   "graphql": {
-    "introspection": false
+    "introspection": true
   }
 }

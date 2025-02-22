@@ -37,7 +37,9 @@ async function setupServer(): Promise<void> {
   await server.start();
   app.use(
     "/v1/graphql",
-    cors<cors.CorsRequest>(),
+    cors<cors.CorsRequest>({
+      origin: ["https://expense-webapp.vercel.app", "http://localhost:5173"],
+    }),
     express.json(),
     verifyToken,
     expressMiddleware(server, {

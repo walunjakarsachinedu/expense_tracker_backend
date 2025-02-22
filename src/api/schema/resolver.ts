@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt";
-import GraphQLJSON from "graphql-type-json";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { AnyBulkWriteOperation, BSON } from "mongodb";
 import mongoose, { InferSchemaType, Types } from "mongoose";
@@ -18,7 +17,6 @@ import {
 } from "./type.js";
 
 const queryResolvers = {
-  JSON: GraphQLJSON,
   Query: {
     hello: (_, args) => {
       return args.name ? `hello ${args.name}` : "hi friend !!!";
