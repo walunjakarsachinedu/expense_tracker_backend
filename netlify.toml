@@ -2,6 +2,7 @@
   external_node_modules = ["express"]
   node_bundler = "esbuild"
   directory = "src/functions"
+  included_files = ["config/**.json"]
 [build]
   include = ["config"]
 [[redirects]]
