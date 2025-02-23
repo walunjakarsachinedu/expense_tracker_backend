@@ -10,6 +10,7 @@ import authDirective from "./schema/auth-directive.js";
 import queryResolvers from "./schema/resolver.js";
 import typeDefs from "./schema/type.graphql.js";
 import verifyToken from "./verifyToken.js";
+import loggerPlugin from "./logger.js";
 
 // applying auth directive to schema
 let authDir = authDirective("auth");
@@ -27,9 +28,15 @@ interface MyContext {
 
 const app = express();
 const httpServer = http.createServer(app);
+
+const plugins = [ApolloServerPluginDrainHttpServer({ httpServer })];
+if (process.env.NODE_ENV !== "production") {
+  plugins.push(loggerPlugin);
+}
+
 const server = new ApolloServer<MyContext>({
   schema,
-  plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+  plugins: plugins,
   introspection: getConfig(configPath.graphql.introspection),
 });
 
