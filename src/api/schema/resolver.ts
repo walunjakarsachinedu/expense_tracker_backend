@@ -53,13 +53,7 @@ const queryResolvers = {
       const isPasswordValid = bcrypt.compareSync(password, user.password);
       if (!isPasswordValid) throw getError(ErrorCodes.INVALID_CREDENTIALS);
 
-      const payload = { name: user.name, email: user.email };
-      const jwtSecret: string = getConfig(configPath.jwt_secret);
-      const jwtConfig: SignOptions = {
-        subject: user._id.toString(),
-        expiresIn: "1d",
-      };
-      return jwt.sign(payload, jwtSecret, jwtConfig);
+      return generateJwtToken({ ...user, _id: user._id.toString() });
     },
     signup: async (parent, { name, email, password }, context, info) => {
       const saltRound = 10;
@@ -74,7 +68,7 @@ const queryResolvers = {
         name: userDb.name,
         email: userDb.email,
       };
-      return user;
+      return generateJwtToken({ ...user, _id: user._id.toString() });
     },
 
     applyUpdates: async (
@@ -188,6 +182,16 @@ const queryResolvers = {
     },
   },
 };
+
+function generateJwtToken(user: UserData) {
+  const payload = { name: user.name, email: user.email };
+  const jwtSecret: string = getConfig(configPath.jwt_secret);
+  const jwtConfig: SignOptions = {
+    subject: user._id.toString(),
+    expiresIn: "1d",
+  };
+  return jwt.sign(payload, jwtSecret, jwtConfig);
+}
 
 /**
  * @returns all persons and transaction tags that the current user is updating but were deleted by another login

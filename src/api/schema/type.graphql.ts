@@ -12,7 +12,7 @@ const typeDefs = `#graphql
 
   type Mutation {
     login(email: String!, password: String!): String
-    signup(name: String!, email: String!, password: String!): User
+    signup(name: String!, email: String!, password: String!): String
     applyUpdates(diff: PersonDiff): Conflicts @auth # returns status
   }
 
