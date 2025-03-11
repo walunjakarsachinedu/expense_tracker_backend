@@ -19,9 +19,15 @@ export interface PersonTx {
   version: string;
 }
 
-export type PersonMinimal = {
+export type PersonVersionId = {
   _id: string;
   version: string;
+};
+
+export type ChangedPersons = {
+  addedPersons: PersonTx[];
+  updatedPersons: PersonTx[];
+  deletedPersons: string[];
 };
 
 /** structure of person data send by client. */

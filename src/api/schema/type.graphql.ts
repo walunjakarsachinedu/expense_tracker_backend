@@ -6,8 +6,7 @@ const typeDefs = `#graphql
   type Query {
     hello(name: String): String 
     user: User @auth
-    personsOfMonth(month: String!): [PersonMinimal!]! @auth
-    persons(ids: [String]): [Person!]! @auth
+    changedPersons(month: String!, personVersionIds: [PersonVersionId!]!): ChangedPersons! @auth
   }
 
   type Mutation {
@@ -20,6 +19,12 @@ const typeDefs = `#graphql
     _id: ID!
     name: String!
     email: String!
+  }
+
+  type ChangedPersons {
+    addedPersons: [Person!]!
+    updatedPersons: [Person!]!
+    deletedPersons: [String!]!
   }
 
   type Person {
@@ -39,7 +44,7 @@ const typeDefs = `#graphql
     tag: String
   }
 
-  type PersonMinimal {
+  input PersonVersionId {
     _id: ID!
     version: String!
   }

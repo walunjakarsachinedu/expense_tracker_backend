@@ -9,11 +9,11 @@ import { ErrorCodes, getError } from "../errors.js";
 import {
   Conflicts,
   PersonDiff,
-  PersonMinimal,
+  PersonVersionId,
   PersonPatch,
-  PersonTx,
   TxPatch,
   UserData,
+  ChangedPersons,
 } from "./type.js";
 
 const queryResolvers = {
@@ -27,23 +27,45 @@ const queryResolvers = {
       delete user["password"];
       return user;
     },
-    personsOfMonth: async (parent, args: { month: string }, context, info) => {
+    changedPersons: async (
+      parent,
+      args: { month: string; personVersionIds: PersonVersionId[] },
+      context,
+      info
+    ) => {
       const persons = await Person.where("userId")
         .equals(context.userId)
         .where("month")
         .equals(args.month)
-        .select("_id version")
         .lean();
-      return persons.map<PersonMinimal>((person) => ({
-        _id: person._id.toString(),
-        version: person.version,
-      }));
-    },
-    persons: async (parent, { ids }, context, info) => {
-      const persons: PersonTx[] = await Person.find({
-        _id: { $in: ids.map((id) => new Types.ObjectId(id)) },
-      });
-      return persons;
+      const addedPersons = persons.filter(
+        (person) =>
+          !args.personVersionIds.find(
+            (personVersionId) => personVersionId._id == person._id.toString()
+          )
+      );
+      const updatedPersons = persons.filter((person) =>
+        args.personVersionIds.find(
+          (personVersionId) =>
+            personVersionId._id == person._id.toString() &&
+            personVersionId.version != person.version
+        )
+      );
+      const deletedPersons = args.personVersionIds
+        .filter(
+          (personVersionId) =>
+            !persons.find(
+              (person) => person._id.toString() == personVersionId._id
+            )
+        )
+        .map((person) => person._id);
+      console.log(JSON.stringify(addedPersons));
+
+      return {
+        addedPersons,
+        deletedPersons,
+        updatedPersons,
+      } satisfies ChangedPersons;
     },
   },
   Mutation: {
