@@ -3,6 +3,7 @@ import { randomInt } from "crypto";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { AnyBulkWriteOperation, BSON } from "mongodb";
 import mongoose, { InferSchemaType } from "mongoose";
+import { ModelType } from "../../common/type.utils.js";
 import { configPath, getConfig } from "../../config-path.js";
 import PasswordResetTokenModel from "../../db/password_reset_tokens.js";
 import Person from "../../db/persons.js";
@@ -13,12 +14,12 @@ import {
   ChangedPersons,
   Conflicts,
   PasswordResetInput,
+  PasswordResetToken,
   PersonDiff,
   PersonPatch,
   PersonVersionId,
   Status,
   TxPatch,
-  UserData,
 } from "./type.js";
 
 const queryResolvers = {
@@ -201,6 +202,7 @@ const queryResolvers = {
 
       return getConflicts(diff, context.userId);
     },
+
     sendPasswordResetCode: async (
       parent,
       { email, nonce }: { email: string; nonce: string },
@@ -209,7 +211,7 @@ const queryResolvers = {
     ): Promise<number> => {
       const resetCode = randomInt(100000, 1000000).toString();
       const minute = 60 * 1000;
-      const expireIn: number = Date.now() + 10 * minute;
+      const after12Minute: number = Date.now() + 12 * minute;
 
       const user = await User.findOne({ email });
       if (!user) throw getError(ErrorCodes.USER_NOT_FOUND);
@@ -218,7 +220,7 @@ const queryResolvers = {
         _id: new mongoose.Types.ObjectId(),
         resetCode: resetCode,
         userId: new mongoose.Types.ObjectId(user.id),
-        expireIn: expireIn,
+        expireIn: after12Minute,
         nonce: nonce,
       });
       const status = await passwordResetClient.sendPasswordResetCode(
@@ -228,7 +230,45 @@ const queryResolvers = {
       if (status == Status.FAILURE) {
         throw getError(ErrorCodes.ERROR_IN_SENDING_EMAIL);
       }
-      return expireIn;
+      return after12Minute;
+    },
+
+    verifyResetCode: async (
+      parent,
+      {
+        resetCode,
+        email,
+        nonce,
+      }: { resetCode: string; email: string; nonce: string },
+      context,
+      info
+    ): Promise<string> => {
+      const resetToken = await PasswordResetTokenModel.findOne({
+        resetCode,
+      });
+      const user = resetToken ? await User.findById(resetToken.userId) : null;
+      const cleanup = async () => {
+        await PasswordResetTokenModel.deleteMany({
+          $expr: { $lt: [{ $toLong: "$expireIn" }, Date.now()] },
+        });
+      };
+
+      const error = validateResetToken({ resetToken, user, email, nonce });
+      if (error) {
+        await cleanup();
+        throw getError(error);
+      }
+      await cleanup();
+
+      const minute = 60 * 1000;
+      const after12Minute: number = Date.now() + 12 * minute;
+      const newResetCode = generateSecureResetCode();
+      resetToken!.resetCode = newResetCode;
+      resetToken!.expireIn = after12Minute;
+
+      await resetToken?.save();
+
+      return newResetCode;
     },
 
     resetPassword: async (
@@ -241,7 +281,7 @@ const queryResolvers = {
       const resetToken = await PasswordResetTokenModel.findOne({
         resetCode,
       });
-
+      const user = resetToken ? await User.findById(resetToken.userId) : null;
       const cleanup = async () => {
         await resetToken?.deleteOne();
         await PasswordResetTokenModel.deleteMany({
@@ -249,27 +289,49 @@ const queryResolvers = {
         });
       };
 
-      try {
-        if (!resetToken || resetToken!.expireIn < Date.now()) {
-          throw getError(ErrorCodes.INVALID_RESET_CODE);
-        }
-        const user = await User.findById(resetToken.userId);
-        if (!user || user.email != email || resetToken.nonce != nonce) {
-          throw getError(ErrorCodes.INVALID_RESET_DATA);
-        }
-
-        user.password = encryptPassword(newPassword);
-        await user.save();
-
+      const error = validateResetToken({ resetToken, user, email, nonce });
+      if (error) {
         await cleanup();
-        return generateJwtToken(user);
-      } catch (err) {
-        await cleanup();
-        throw err;
+        throw getError(error);
       }
+      await cleanup();
+
+      user!.password = encryptPassword(newPassword);
+      await user!.save();
+
+      return generateJwtToken(user!);
     },
   },
 };
+
+function validateResetToken(input: {
+  resetToken: ModelType<PasswordResetToken> | null;
+  user: ModelType<{ name: string; email: string; password: string }> | null;
+  email: string;
+  nonce: string;
+}): ErrorCodes | null {
+  const { resetToken, user, email, nonce } = input;
+
+  if (!resetToken || resetToken!.expireIn < Date.now()) {
+    return ErrorCodes.INVALID_RESET_CODE;
+  }
+  if (!user || user.email != email || resetToken.nonce != nonce) {
+    return ErrorCodes.INVALID_RESET_DATA;
+  }
+  return null;
+}
+
+/** Example output: "Xg4Z9mA2Lp"  */
+function generateSecureResetCode(length = 10): string {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let resetCode = "";
+  for (let i = 0; i < length; i++) {
+    resetCode +=
+      chars[crypto.getRandomValues(new Uint8Array(1))[0] % chars.length];
+  }
+  return resetCode;
+}
 
 function encryptPassword(password: string) {
   const saltRound = 10;

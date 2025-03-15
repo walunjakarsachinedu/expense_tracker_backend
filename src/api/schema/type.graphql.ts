@@ -14,6 +14,7 @@ const typeDefs = `#graphql
     signup(name: String!, email: String!, password: String!): String
     applyUpdates(diff: PersonDiff): Conflicts @auth # returns status
     sendPasswordResetCode(email: String!, nonce: String!): String # return expiration timestamp
+    verifyResetCode(resetCode: String!, email: String!, nonce: String!): String # returns new reset code 
     resetPassword(passwordResetInput: PasswordResetInput): String # return token
   }
 

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { Prettify } from "../../common/type.utils";
 
 /** define type of transaction */
 export enum TableType {
