@@ -3,5 +3,9 @@
     "username": "expense_tracker_app_mongodb_username",
     "password": "expense_tracker_app_mongodb_password"
   },
+  "passwordReset": {
+    "email": "expense_tracker_app_email",
+    "appPassword": "expense_tracker_app_appPassword"
+  },
   "jwt_secret": "expense_tracker_app_jwt_secret"
 }

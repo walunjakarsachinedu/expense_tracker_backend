@@ -13,6 +13,15 @@ const typeDefs = `#graphql
     login(email: String!, password: String!): String
     signup(name: String!, email: String!, password: String!): String
     applyUpdates(diff: PersonDiff): Conflicts @auth # returns status
+    sendPasswordResetCode(email: String!, nonce: String!): String # return expiration timestamp
+    resetPassword(passwordResetInput: PasswordResetInput): String # return token
+  }
+
+  input PasswordResetInput {
+    resetCode: String!
+    newPassword: String! 
+    nonce: String!
+    email: String!
   }
 
   type User {

@@ -12,6 +12,9 @@ enum ErrorCodes {
   EXPENSE_TAG_NOT_FOUND_IN_PERSON_EXPENSE = "EXPENSE_TAG_NOT_FOUND_IN_PERSON_EXPENSE",
   TOKEN_EXPIRED = "TOKEN_EXPIRED",
   INVALID_TOKEN = "INVALID_TOKEN",
+  INVALID_RESET_CODE = "INVALID_RESET_CODE",
+  INVALID_RESET_DATA = "INVALID_RESET_DATA",
+  ERROR_IN_SENDING_EMAIL = "ERROR_IN_SENDING_EMAIL",
 }
 
 const errorData: { [key in ErrorCodes]: { message: string; httpCode } } = {
@@ -54,6 +57,19 @@ const errorData: { [key in ErrorCodes]: { message: string; httpCode } } = {
   [ErrorCodes.INVALID_TOKEN]: {
     message: "Token is invalid. Please provide valid token.",
     httpCode: 401,
+  },
+  [ErrorCodes.INVALID_RESET_CODE]: {
+    message: "Reset code is invalid. Please provide valid reset code.",
+    httpCode: 400,
+  },
+  [ErrorCodes.INVALID_RESET_DATA]: {
+    message: "Reset data is invalid. Please provide valid reset data.",
+    httpCode: 400,
+  },
+  [ErrorCodes.ERROR_IN_SENDING_EMAIL]: {
+    message:
+      "Error in sending email of resent code. Please try after some time.",
+    httpCode: 500,
   },
 };
 

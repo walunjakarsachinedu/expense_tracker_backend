@@ -86,3 +86,26 @@ export type UserData = {
   name: string;
   email: string;
 };
+
+//
+// password reset features type
+
+export enum Status {
+  SUCCESS = "SUCCESS",
+  FAILURE = "FAILURE",
+}
+
+export type PasswordResetToken = {
+  _id: mongoose.Types.ObjectId;
+  resetCode: string;
+  userId: mongoose.Types.ObjectId;
+  expireIn: number;
+  nonce: string;
+};
+
+export type PasswordResetInput = {
+  resetCode: string;
+  newPassword: string;
+  nonce: string;
+  email: string;
+};

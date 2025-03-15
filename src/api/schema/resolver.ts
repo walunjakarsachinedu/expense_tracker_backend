@@ -1,19 +1,24 @@
 import bcrypt from "bcrypt";
+import { randomInt } from "crypto";
 import jwt, { SignOptions } from "jsonwebtoken";
 import { AnyBulkWriteOperation, BSON } from "mongodb";
-import mongoose, { InferSchemaType, Types } from "mongoose";
+import mongoose, { InferSchemaType } from "mongoose";
 import { configPath, getConfig } from "../../config-path.js";
+import PasswordResetTokenModel from "../../db/password_reset_tokens.js";
 import Person from "../../db/persons.js";
 import User from "../../db/users.js";
 import { ErrorCodes, getError } from "../errors.js";
+import passwordResetClient from "../password-reset.js";
 import {
+  ChangedPersons,
   Conflicts,
+  PasswordResetInput,
   PersonDiff,
-  PersonVersionId,
   PersonPatch,
+  PersonVersionId,
+  Status,
   TxPatch,
   UserData,
-  ChangedPersons,
 } from "./type.js";
 
 const queryResolvers = {
@@ -75,22 +80,16 @@ const queryResolvers = {
       const isPasswordValid = bcrypt.compareSync(password, user.password);
       if (!isPasswordValid) throw getError(ErrorCodes.INVALID_CREDENTIALS);
 
-      return generateJwtToken({ ...user, _id: user._id.toString() });
+      return generateJwtToken(user);
     },
     signup: async (parent, { name, email, password }, context, info) => {
-      const saltRound = 10;
-      password = bcrypt.hashSync(password, saltRound);
+      password = encryptPassword(password);
       const existingUser = await User.findOne({ email });
       if (existingUser) throw getError(ErrorCodes.USER_ALREADY_EXISTS);
 
       const userDb = await User.create({ name, email, password });
 
-      const user: UserData = {
-        _id: userDb._id.toString(),
-        name: userDb.name,
-        email: userDb.email,
-      };
-      return generateJwtToken({ ...user, _id: user._id.toString() });
+      return generateJwtToken(userDb);
     },
 
     applyUpdates: async (
@@ -202,10 +201,84 @@ const queryResolvers = {
 
       return getConflicts(diff, context.userId);
     },
+    sendPasswordResetCode: async (
+      parent,
+      { email, nonce }: { email: string; nonce: string },
+      context,
+      info
+    ): Promise<number> => {
+      const resetCode = randomInt(100000, 1000000).toString();
+      const minute = 60 * 1000;
+      const expireIn: number = Date.now() + 10 * minute;
+
+      const user = await User.findOne({ email });
+      if (!user) throw getError(ErrorCodes.USER_NOT_FOUND);
+
+      await PasswordResetTokenModel.create({
+        _id: new mongoose.Types.ObjectId(),
+        resetCode: resetCode,
+        userId: new mongoose.Types.ObjectId(user.id),
+        expireIn: expireIn,
+        nonce: nonce,
+      });
+      const status = await passwordResetClient.sendPasswordResetCode(
+        resetCode,
+        email
+      );
+      if (status == Status.FAILURE) {
+        throw getError(ErrorCodes.ERROR_IN_SENDING_EMAIL);
+      }
+      return expireIn;
+    },
+
+    resetPassword: async (
+      parent,
+      { passwordResetInput }: { passwordResetInput: PasswordResetInput },
+      context,
+      info
+    ): Promise<string> => {
+      const { resetCode, newPassword, email, nonce } = passwordResetInput;
+      const resetToken = await PasswordResetTokenModel.findOne({
+        resetCode,
+      });
+
+      const cleanup = async () => {
+        await resetToken?.deleteOne();
+        await PasswordResetTokenModel.deleteMany({
+          $expr: { $lt: [{ $toLong: "$expireIn" }, Date.now()] },
+        });
+      };
+
+      try {
+        if (!resetToken || resetToken!.expireIn < Date.now()) {
+          throw getError(ErrorCodes.INVALID_RESET_CODE);
+        }
+        const user = await User.findById(resetToken.userId);
+        if (!user || user.email != email || resetToken.nonce != nonce) {
+          throw getError(ErrorCodes.INVALID_RESET_DATA);
+        }
+
+        user.password = encryptPassword(newPassword);
+        await user.save();
+
+        await cleanup();
+        return generateJwtToken(user);
+      } catch (err) {
+        await cleanup();
+        throw err;
+      }
+    },
   },
 };
 
-function generateJwtToken(user: UserData) {
+function encryptPassword(password: string) {
+  const saltRound = 10;
+  return bcrypt.hashSync(password, saltRound);
+}
+
+function generateJwtToken(
+  user: InferSchemaType<typeof User.schema> & { _id: mongoose.Types.ObjectId }
+) {
   const payload = { name: user.name, email: user.email };
   const jwtSecret: string = getConfig(configPath.jwt_secret);
   const jwtConfig: SignOptions = {

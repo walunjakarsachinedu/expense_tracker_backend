@@ -18,6 +18,10 @@ const configPath = {
     password: new ConfigValue("mongodb.password"),
     dbName: new ConfigValue("mongodb.dbName"),
   },
+  passwordReset: {
+    email: new ConfigValue("passwordReset.email"),
+    appPassword: new ConfigValue("passwordReset.appPassword"),
+  },
   jwt_secret: new ConfigValue("jwt_secret"),
   graphql: {
     introspection: new ConfigValue("graphql.introspection"),

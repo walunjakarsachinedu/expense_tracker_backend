@@ -3,6 +3,7 @@ import jwt, { TokenExpiredError } from "jsonwebtoken";
 import { configPath, getConfig } from "../config-path.js";
 import { ErrorCodes, getError } from "./errors.js";
 
+/** verify token & add token payload to request context at auth property */
 export default function verifyToken(
   req: Request,
   res: Response,
