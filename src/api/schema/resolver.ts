@@ -80,6 +80,9 @@ const queryResolvers = {
     },
   },
   Mutation: {
+    /**
+     * @throws `ErrorCodes.INVALID_CREDENTIALS` If email or password is invalid.
+     */
     login: async (parent, { email, password }, context, info) => {
       const user = await User.findOne({ email });
       if (!user) throw getError(ErrorCodes.INVALID_CREDENTIALS);
@@ -88,6 +91,9 @@ const queryResolvers = {
 
       return generateJwtToken(user);
     },
+    /**
+     * @throws `ErrorCodes.USER_ALREADY_EXISTS` If user with email already exists.
+     */
     signup: async (parent, { name, email, password }, context, info) => {
       password = encryptPassword(password);
       const existingUser = await User.findOne({ email });
@@ -208,6 +214,10 @@ const queryResolvers = {
       return getConflicts(diff, context.userId);
     },
 
+    /**
+     * @throws `ErrorCodes.USER_NOT_FOUND` If user with email not found.
+     * @throws `ErrorCodes.ERROR_IN_SENDING_EMAIL` If error in sending reset code.
+     */
     sendPasswordResetCode: async (
       parent,
       { email, nonce }: { email: string; nonce: string },
@@ -238,6 +248,10 @@ const queryResolvers = {
       return after12Minute;
     },
 
+    /**
+     * @throws `ErrorCodes.INVALID_RESET_CODE` If code is expire or invalid.
+     * @throws `ErrorCodes.INVALID_RESET_DATA` If email or nonce is incorrect.
+     */
     verifyResetCode: async (
       parent,
       {
@@ -276,6 +290,10 @@ const queryResolvers = {
       return newResetCode;
     },
 
+    /**
+     * @throws `ErrorCodes.INVALID_RESET_CODE` If code is expire or invalid.
+     * @throws `ErrorCodes.INVALID_RESET_DATA` If email or nonce is incorrect.
+     */
     resetPassword: async (
       parent,
       { passwordResetInput }: { passwordResetInput: PasswordResetInput },
@@ -309,6 +327,10 @@ const queryResolvers = {
   },
 };
 
+/**
+ * @throws `ErrorCodes.INVALID_RESET_CODE` If code is expire or invalid.
+ * @throws `ErrorCodes.INVALID_RESET_DATA` If email or nonce is incorrect.
+ */
 function validateResetToken(input: {
   resetToken: ModelType<PasswordResetToken> | null;
   user: ModelType<{ name: string; email: string; password: string }> | null;
