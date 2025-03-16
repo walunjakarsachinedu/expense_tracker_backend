@@ -39,11 +39,17 @@ const queryResolvers = {
       context,
       info
     ) => {
-      const persons = await Person.where("userId")
+      let query = Person.where("userId")
         .equals(context.userId)
         .where("month")
-        .equals(args.month)
-        .lean();
+        .equals(args.month);
+      if (args.personVersionIds.length > 0) {
+        query = query.where({
+          $nor: args.personVersionIds,
+        });
+      }
+      const persons = await query.lean();
+
       const addedPersons = persons.filter(
         (person) =>
           !args.personVersionIds.find(
@@ -65,7 +71,6 @@ const queryResolvers = {
             )
         )
         .map((person) => person._id);
-      console.log(JSON.stringify(addedPersons));
 
       return {
         addedPersons,
