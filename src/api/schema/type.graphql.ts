@@ -15,7 +15,7 @@ const typeDefs = `#graphql
     applyUpdates(diff: PersonDiff): Conflicts @auth # returns status
     sendPasswordResetCode(email: String!, nonce: String!): String # return expiration timestamp
     verifyResetCode(resetCode: String!, email: String!, nonce: String!): String # returns new reset code 
-    resetPassword(passwordResetInput: PasswordResetInput): String # return token
+    changePassword(passwordResetInput: PasswordResetInput): String # return token
   }
 
   input PasswordResetInput {

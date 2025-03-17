@@ -294,7 +294,7 @@ const queryResolvers = {
      * @throws `ErrorCodes.INVALID_RESET_CODE` If code is expire or invalid.
      * @throws `ErrorCodes.INVALID_RESET_DATA` If email or nonce is incorrect.
      */
-    resetPassword: async (
+    changePassword: async (
       parent,
       { passwordResetInput }: { passwordResetInput: PasswordResetInput },
       context,
