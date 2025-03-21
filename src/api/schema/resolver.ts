@@ -63,14 +63,27 @@ const queryResolvers = {
             personVersionId.version != person.version
         )
       );
+
+      // represent subset matchedPersons, where personVersionIds is superset
+      const matchedPersons = args.personVersionIds.length
+        ? await Person.where("userId")
+            .equals(context.userId)
+            .where("month")
+            .equals(args.month)
+            .where({
+              _id: { $in: args.personVersionIds.map(({ _id }) => _id) },
+            })
+            .select("_id")
+        : [];
+
       const deletedPersons = args.personVersionIds
         .filter(
-          (personVersionId) =>
-            !persons.find(
-              (person) => person._id.toString() == personVersionId._id
+          ({ _id }) =>
+            !matchedPersons.find(
+              (person) => person._id.toString() == _id.toString()
             )
         )
-        .map((person) => person._id);
+        .map((person) => person._id.toString());
 
       return {
         addedPersons,
