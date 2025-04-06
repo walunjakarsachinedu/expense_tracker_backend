@@ -6,16 +6,23 @@ const typeDefs = `#graphql
   type Query {
     hello(name: String): String 
     user: User @auth
-    changedPersons(month: String!, personVersionIds: [PersonVersionId!]!): ChangedPersons! @auth
   }
 
   type Mutation {
+    # auth related
     login(email: String!, password: String!): String
     signup(name: String!, email: String!, password: String!): String
-    applyUpdates(diff: PersonDiff): Conflicts @auth # returns status
+    # syncing changes related
+    syncChanges(diff: PersonDiff, month: String!, personVersionIds: [PersonVersionId!]!): Changes! @auth
+    # password reset features related
     sendPasswordResetCode(email: String!, nonce: String!): String # return expiration timestamp
     verifyResetCode(resetCode: String!, email: String!, nonce: String!): String # returns new reset code 
     changePassword(passwordResetInput: PasswordResetInput): String # return token
+  }
+
+  type Changes {
+    conflictsPersons: [ConflictPerson!]! 
+    changedPersons: ChangedPersons!
   }
 
   input PasswordResetInput {
@@ -104,11 +111,6 @@ const typeDefs = `#graphql
     index: Int
     money: Float
     tag: String
-  }
-
-  type Conflicts {
-    # Persons deleted by another login during update  
-    conflictPersons: [ConflictPerson!]
   }
 
   type ConflictPerson {

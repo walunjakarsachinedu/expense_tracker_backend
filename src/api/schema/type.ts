@@ -25,6 +25,16 @@ export type PersonVersionId = {
   version: string;
 };
 
+export type SyncChangesInput = {
+  diff: PersonDiff;
+  month: string;
+  personVersionIds: PersonVersionId[];
+};
+export type Changes = {
+  conflictsPersons: ConflictPerson[];
+  changedPersons: ChangedPersons;
+};
+
 export type ChangedPersons = {
   addedPersons: PersonTx[];
   updatedPersons: PersonTx[];
@@ -35,10 +45,6 @@ export type ChangedPersons = {
 export type PersonInput = Prettify<
   Omit<PersonTx, "userId" | "_id"> & { _id: string }
 >;
-
-export type Conflicts = {
-  conflictPersons?: ConflictPerson[];
-};
 
 export type ConflictPerson = {
   _id: string;
