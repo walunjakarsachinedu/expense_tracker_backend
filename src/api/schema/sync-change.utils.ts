@@ -117,6 +117,7 @@ export async function applyUpdates(
   return getConflicts(diff, context.userId);
 }
 
+/** Get deleted person/txs which client is trying to update. */
 async function getConflicts(
   personDiff: PersonDiff,
   userId: string
@@ -177,6 +178,7 @@ export async function changedPersons(
     .where("month")
     .equals(args.month);
   if (args.personVersionIds.length > 0) {
+    // get all person excluding onces with matching both _id and version in the list.
     query = query.where({
       $nor: args.personVersionIds,
     });
