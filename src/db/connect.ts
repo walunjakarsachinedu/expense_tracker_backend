@@ -10,7 +10,7 @@ export async function connects(): Promise<void> {
     const username = getConfig(configPath.mongodb.username);
     const password = getConfig(configPath.mongodb.password);
     // clear();
-    const dbUrl = `mongodb+srv://${username}:${password}@clusters0.zasrmm9.mongodb.net/${dbName}?retryWrites=true&w=majority`;
+    const dbUrl = `mongodb+srv://${username}:${password}@cluster0.zasrmm9.mongodb.net/${dbName}?retryWrites=true&w=majority`;
     await mongoose
       .connect(dbUrl)
       .then(() => console.log("mongodb connected successfully"));
