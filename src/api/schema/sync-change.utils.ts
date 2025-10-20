@@ -4,24 +4,45 @@ import Person from "../../db/persons";
 import {
   ChangedPersons,
   ConflictPerson,
-  PersonDiff,
+  MonthlyNotes,
+  MonthDiff,
   PersonPatch,
-  PersonVersionId,
+  VersionId,
   TxPatch,
 } from "./type";
 import personUtils from "../../common/personUtils";
+import MonthlyNotesModel from "../../db/monthlyNotes";
 
 /**
  * Stores changes in database.
  * @returns conflicting updates for deleted data.
  */
 export async function applyUpdates(
-  { diff }: { diff: PersonDiff },
+  { diff, monthlyNotes, month }: { diff: MonthDiff, monthlyNotes?: MonthlyNotes, month: string },
   context
 ): Promise<ConflictPerson[]> {
   const dbOperations: AnyBulkWriteOperation<
     InferSchemaType<typeof Person.schema>
   >[] = [];
+
+  if(monthlyNotes?.notes || monthlyNotes?.notes == '') {
+    
+    await MonthlyNotesModel.updateOne(
+      {
+        _id: monthlyNotes._id
+      },
+      {
+        $set: {
+          _id: monthlyNotes._id,
+          userId: context.userId,
+          month: month,
+          notes: monthlyNotes?.notes,
+          version: monthlyNotes?.version,
+        },
+      },
+      { upsert: true }
+    );
+  }
 
   diff.added
     ?.map((person) => ({
@@ -119,7 +140,7 @@ export async function applyUpdates(
 
 /** Get deleted person/txs which client is trying to update. */
 async function getConflicts(
-  personDiff: PersonDiff,
+  personDiff: MonthDiff,
   userId: string
 ): Promise<ConflictPerson[]> {
   if (personDiff.updated?.length) {
@@ -170,7 +191,7 @@ async function getConflicts(
 
 /** @returns changes which are not present in client. */
 export async function changedPersons(
-  args: { month: string; personVersionIds: PersonVersionId[] },
+  args: { month: string; personVersionIds: VersionId[] },
   context
 ) {
   let query = Person.where("userId")
@@ -227,6 +248,30 @@ export async function changedPersons(
   } satisfies ChangedPersons;
 }
 
+  /** @returns monthlyNotes if version differs or version not present. */
+  export async function changedMonthlyNotes(
+    monthlyNotesVersionId: VersionId | undefined,
+    month: string,
+    context: { userId: string }
+  ): Promise<Required<MonthlyNotes> | undefined> {
+    if (monthlyNotesVersionId) {
+      const notes = await MonthlyNotesModel.findOne({
+        _id: monthlyNotesVersionId._id,
+        version: { $ne: monthlyNotesVersionId.version }
+      }).lean<Required<MonthlyNotes>>().exec();
+
+      return notes ?? undefined;
+    }
+
+    const notes = await MonthlyNotesModel.findOne({
+      userId: context.userId,
+      month
+    }).lean<Required<MonthlyNotes>>().exec();
+
+    return notes ?? undefined;
+  }
+
+
 /**
  * Syncs changed persons list (in an **inline way**) with diff received from the client.
  *
@@ -238,7 +283,7 @@ export async function changedPersons(
  *     - Represent conflicting change, will handle by client.
  */
 export function syncChangedPersonsWithDiff(args: {
-  diff: PersonDiff;
+  diff: MonthDiff;
   changedPersonsList: ChangedPersons;
 }) {
   const { diff, changedPersonsList } = args;

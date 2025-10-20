@@ -10,6 +10,7 @@ import { ErrorCodes, getError } from "../errors.js";
 import passwordResetClient from "../password-reset.js";
 import {
   applyUpdates,
+  changedMonthlyNotes,
   changedPersons,
   syncChangedPersonsWithDiff,
 } from "./sync-change.utils.js";
@@ -59,19 +60,29 @@ const queryResolvers = {
     },
 
     syncChanges: async (parent, args: SyncChangesInput, context, info) => {
-      const { diff, month, personVersionIds } = args;
+      const { diff, month, currentState } = args;
+      const { personVersionIds, monthlyNotesVersionId } = currentState;
       const changedPersonsList = await changedPersons(
         { month, personVersionIds },
         context
       );
+      const { monthlyNotes } = diff;
+
       syncChangedPersonsWithDiff({ diff, changedPersonsList });
 
-      const conflictsPersons = await applyUpdates({ diff }, context);
+      const conflictsPersons = await applyUpdates({ diff, monthlyNotes, month }, context);
 
-      return {
+      const changes: Changes =  {
         changedPersons: changedPersonsList,
         conflictsPersons: conflictsPersons,
-      } satisfies Changes;
+      };
+
+      if(!diff.monthlyNotes) {
+        const notes = await changedMonthlyNotes(monthlyNotesVersionId, month, context);
+        changes.monthlyNotes = notes;
+      }
+
+      return changes;
     },
 
     /**

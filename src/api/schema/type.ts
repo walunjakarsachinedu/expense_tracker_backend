@@ -20,19 +20,44 @@ export interface PersonTx {
   version: string;
 }
 
-export type PersonVersionId = {
+/** Structure used for database storage. */
+export type MonthNotesDB = {
+  _id: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  /** format: MM-yyyy */
+  month: string; 
+  notes: string;
+  version: string;
+}
+
+export type VersionId = {
   _id: string;
   version: string;
 };
 
 export type SyncChangesInput = {
-  diff: PersonDiff;
+  diff: MonthDiff;
   month: string;
-  personVersionIds: PersonVersionId[];
+  currentState: CurrentState;
 };
+
+export type CurrentState = {
+  personVersionIds: VersionId[]
+  monthlyNotesVersionId?: VersionId
+}
+
+
+export type MonthlyNotes = {
+  _id: string;
+  notes?: string;
+  version: string;
+}
+
+
 export type Changes = {
   conflictsPersons: ConflictPerson[];
   changedPersons: ChangedPersons;
+  monthlyNotes?: Required<MonthlyNotes>;
 };
 
 export type ChangedPersons = {
@@ -52,10 +77,11 @@ export type ConflictPerson = {
   txs?: { _id: string; isDeleted: boolean }[];
 };
 
-export type PersonDiff = {
+export type MonthDiff = {
   added?: PersonInput[];
   updated?: PersonPatch[];
   deleted?: string[];
+  monthlyNotes?: MonthlyNotes;
 };
 
 export type PersonPatch = {

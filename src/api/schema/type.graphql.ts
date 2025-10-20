@@ -13,7 +13,7 @@ const typeDefs = `#graphql
     login(email: String!, password: String!): String
     signup(name: String!, email: String!, password: String!): String
     # syncing changes related
-    syncChanges(diff: PersonDiff, month: String!, personVersionIds: [PersonVersionId!]!): Changes! @auth
+    syncChanges(diff: MonthDiff, month: String!, currentState: CurrentState): Changes! @auth
     # password reset features related
     sendPasswordResetCode(email: String!, nonce: String!): String # return expiration timestamp
     verifyResetCode(resetCode: String!, email: String!, nonce: String!): String # returns new reset code 
@@ -23,6 +23,13 @@ const typeDefs = `#graphql
   type Changes {
     conflictsPersons: [ConflictPerson!]! 
     changedPersons: ChangedPersons!
+    monthlyNotes: MonthlyNotes
+  }
+
+  type MonthlyNotes {
+    _id: ID!
+    notes: String!
+    version: String!
   }
 
   input PasswordResetInput {
@@ -61,16 +68,17 @@ const typeDefs = `#graphql
     tag: String
   }
 
-  input PersonVersionId {
+  input VersionId {
     _id: ID!
     version: String!
   }
 
 
-  input PersonDiff {
+  input MonthDiff {
     added: [PersonInput!]
     updated: [PersonPatch!]
     deleted: [String!]
+    monthlyNotes: MonthlyNotesInput
   }
 
   input PersonInput {
@@ -111,6 +119,17 @@ const typeDefs = `#graphql
     index: Int
     money: Float
     tag: String
+  }
+
+  input MonthlyNotesInput {
+    _id: ID!
+    notes: String!
+    version: String!
+  }
+
+  input CurrentState {
+    personVersionIds: [VersionId!]!
+    monthlyNotesVersionId: VersionId
   }
 
   type ConflictPerson {

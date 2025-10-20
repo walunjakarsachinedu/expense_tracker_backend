@@ -1,8 +1,8 @@
-import { PersonDiff, PersonPatch, PersonTx, TxDiff } from "../api/schema/type";
+import { MonthDiff, PersonPatch, PersonTx, TxDiff } from "../api/schema/type";
 
 class PersonUtils {
   /** Apply update patches **inline** to persons with matching _id. */
-  applyUpdateDiffToPersons(args: { persons: PersonTx[]; diff: PersonDiff }) {
+  applyUpdateDiffToPersons(args: { persons: PersonTx[]; diff: MonthDiff }) {
     const { persons, diff } = args;
     const diffUpdates: Record<string, PersonPatch | undefined> =
       this._toMapById(diff.updated ?? []);
