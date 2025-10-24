@@ -45,6 +45,7 @@ const personSchema = new Schema<PersonTx>({
         },
         money: Number,
         tag: String,
+        performedAt: Number,
       },
     ],
     required: true,

@@ -66,6 +66,7 @@ const typeDefs = `#graphql
     index: Int!
     money: Float
     tag: String
+    performedAt: Int
   }
 
   input VersionId {
@@ -112,6 +113,7 @@ const typeDefs = `#graphql
     index: Int!
     money: Float
     tag: String
+    performedAt: Int
   }
 
   input TxPatch {
@@ -119,6 +121,7 @@ const typeDefs = `#graphql
     index: Int
     money: Float
     tag: String
+    performedAt: Int
   }
 
   input MonthlyNotesInput {

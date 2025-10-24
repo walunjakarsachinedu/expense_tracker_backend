@@ -105,6 +105,8 @@ export interface Tx {
   index: number;
   money?: number;
   tag?: string;
+  /** represent day in month, when transaction is performed. */
+  performedAt?: number;
 }
 
 export type TxPatch = {
@@ -112,6 +114,8 @@ export type TxPatch = {
   index?: number;
   money?: number;
   tag?: string;
+  /** represent day in month, when transaction is performed. */
+  performedAt?: number;
 };
 
 export type UserData = {

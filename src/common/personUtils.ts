@@ -45,6 +45,7 @@ class PersonUtils {
       if (diff.index) tx.index = diff.index;
       if (diff.money) tx.money = diff.money;
       if (diff.tag) tx.tag = diff.tag;
+      if (diff.performedAt || diff.performedAt == null) tx.performedAt = diff.performedAt;
     });
 
     person.txs = person.txs.sort((a, b) => a.index - b.index);
