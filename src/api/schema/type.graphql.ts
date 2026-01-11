@@ -1,7 +1,7 @@
 const typeDefs = `#graphql
   scalar JSON
 
-  enum TableType { Expense, Income } 
+  enum TableType { Expense, Income, UpcomingExpense } 
 
   type Query {
     hello(name: String): String 
